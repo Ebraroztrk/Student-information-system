@@ -1,5 +1,4 @@
-using UBS;
-
+use ubs;
 create table Person(
 	person_id int,
 	age int,
@@ -11,7 +10,7 @@ create table Person(
 	primary key(person_id)
 );
 
-create table Student (
+create table Student(
     student_id int,
     department varchar(20),
     primary key(student_id),
@@ -45,6 +44,7 @@ create table Employee(
 	employee_id int,
 	salary int,
 	primary key (employee_id)
+	foreign key (employee_id) references Person(person_id)
 );
 
 create table Administrative_staff(
