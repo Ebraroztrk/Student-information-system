@@ -26,30 +26,61 @@ create table Fixed_Expense(
 create table Material(
 	material_id int,
 	amount int,
-	in_stock boolean,
+	stock_amount int,
 	primary key (material_id)
 );
 create table Additional_Expenses(
 	expense_id int,
-	week_no ENUM(1,2,3,4),
+	week_no int,
 	material_id int,
 	name varchar(20),
 	amount int,
 	primary key (expense_id),
 	foreign key (material_id) references Material(material_id)
 );
+create table Course(
+	course_id int,
+	primary key (course_id)
+);
 create table Course_Uses_Material(
 	course_id int,
 	material_id int,
-	week_no ENUM(1,2,3,4);
+	week_no int,
 	primary key (course_id,material_id),
-	foreign key (material_id) references Material(material_id)
+	foreign key (material_id) references Material(material_id),
 	foreign key (course_id) references Course(course_id)
 );
-create table Course(
-	course_id int,
-	material_id int,
-	primary key (course_id),
-	foreign key (material_id) references Material(material_id)
-);
+
+
+
+
+-- bir material kalmadiysa ve harhangi bir hafta onu kullanmak isteyen course olursa uyari gonderir.
+CREATE PROCEDURE RaiseMaterialStockEmptyWarning()
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Warning: Material stock is empty for material_id ';
+END;
+
+CREATE TRIGGER CourseUsesMaterialTrigger
+AFTER INSERT ON Course_Uses_Material
+FOR EACH ROW
+BEGIN
+    -- Update the material amount by decrementing it by 1
+    UPDATE Material
+    SET amount = amount - 1
+    WHERE material_id = NEW.material_id;
+
+    -- Set stock_available using SELECT INTO
+    SET @stock_available = (
+        SELECT amount
+        FROM Material
+        WHERE material_id = NEW.material_id
+    );
+
+    -- If the stock is empty, call the stored procedure to raise a warning
+    IF @stock_available <= 0 THEN
+        CALL RaiseMaterialStockEmptyWarning();
+    END IF;
+END;
+
 
