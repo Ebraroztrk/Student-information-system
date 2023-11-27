@@ -53,7 +53,7 @@ create table Administrative_staff(
 );
 create table Temizlikci(
 	temizlikci_id int,
-	foreign key (temizlikci) references Employee(employee_id)
+	foreign key (temizlikci_id) references Employee(employee_id)
 );
 create table Report(
 	report_id int,
