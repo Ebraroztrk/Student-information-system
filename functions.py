@@ -57,6 +57,17 @@ def get_all_employees(cursor):
     values = cursor.fetchall()
     print(values)
 
+
+def get_all_teachers(cursor):
+    cursor.execute('''
+        select e.*,t.course_id
+        from employee e
+        join teacher t on t.teacher_id = e.employee_id
+    ''')
+    values = cursor.fetchall()
+    print(values)
+
+
 try:
     connection = mysql.connector.connect(
         host=host,
@@ -66,7 +77,7 @@ try:
     )
     if connection.is_connected():
         cursor = connection.cursor()
-        get_all_employees(cursor)
+        get_all_teachers(cursor)
     connection.commit()
 except mysql.connector.Error as e:
     print(f"Error: {e}")
