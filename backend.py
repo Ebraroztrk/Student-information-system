@@ -108,24 +108,74 @@ def get_teacher_ids(cursor):
     result = cursor.fetchall()
     return [row[0] for row in result]
 
-def insert_teacher_avail(cursor, teacher_id, course_id):
-    # Create a list of unique combinations of first and second digits between 0-4
-    random_numbers = [(i, j) for i in range(5) for j in range(5)]
-    random.shuffle(random_numbers)
+def get_course_ids(cursor):
+    cursor.execute('''
+        SELECT course_id FROM Course
+    ''')
+    result = cursor.fetchall()
+    course_ids = [row[0] for row in result]
+    return course_ids
 
-    # Select a random subset of the list
-    num_of_random_numbers = random.randint(0, len(random_numbers))
-    selected_numbers = random_numbers[:num_of_random_numbers]
+def create_random_sections():
+    num_of_random_numbers = random.randint(0, 30)
+    random_numbers = []  # Initialize an empty list
 
-    for first_digit, second_digit in selected_numbers:
-        day_section = first_digit * 10 + second_digit
-        cursor.execute('''
-            INSERT INTO Teacher_Section_Availability (teacher_id, course_id, available_section)
-            VALUES (%s, %s, %s)
-        ''', (teacher_id, course_id, day_section))
+    for i in range(num_of_random_numbers):
+        first_digit = random.randint(0, 4)
+        second_digit = random.randint(0, 4)
+        
+        # Check if the section is not in the list
+        if (first_digit * 10 + second_digit) not in random_numbers:
+            random_numbers.append(first_digit * 10 + second_digit)  # Append to the list
 
+    return random_numbers
+    #num_of_random_numbers = random.randint(0, 45)
+    #random_numbers
+    #for i in range (0,num_of_random_numbers):
+    #    random_numbers = [(i, j) for i in range(5) for j in range(5)]
+    #    random.shuffle(random_numbers)
+    #    
+    #selected_numbers = random_numbers
+    #return selected_numbers
 
+def insert_teacher_avail(cursor):
+    teacher_ids = get_teacher_ids(cursor)
+    for teacher_id in teacher_ids:
+        course_id = teacher_id - 420
+        selected_numbers = create_random_sections()
+        for day_section in selected_numbers:
+            cursor.execute('''
+                INSERT INTO Teacher_Section_Availability (teacher_id, course_id, available_section)
+                VALUES (%s, %s, %s)
+            ''', (teacher_id, course_id, day_section))
 
+def insert_section_request(cursor):
+    course_ids = get_course_ids(cursor)
+    i = 1
+    for k in range(0,20):
+        for course_id in course_ids:
+            selected_numbers = create_random_sections()
+            for day_section in selected_numbers:
+                cursor.execute('''
+                    INSERT INTO Section_Request (request_id,day_section,course_id)
+                    VALUES (%s, %s, %s)
+                ''', (i, day_section, course_id))
+                i = i+1
+
+def activate_the_courses(cursor):
+    cursor.execute('''
+        UPDATE course
+        SET active = true
+        WHERE course_id IN (
+            SELECT course_id
+            FROM (
+                SELECT course_id, MAX(request_count) AS max_request_count
+                FROM course
+                GROUP BY course_id
+            ) AS max_counts
+            WHERE request_count = max_request_count
+        );
+    ''')
 
 # ------------------------------------------------------------------------------
 try:
@@ -137,6 +187,21 @@ try:
     )
     if connection.is_connected():
         cursor = connection.cursor()
+
+        ## Insert 500 persons
+        #for i in range(1, 551):
+        #    name = random.choice(names)
+        #    surname = random.choice(surnames)
+        #    surname_initials = surname[:2].lower()
+        #    address = f'{random.randint(1, 999)} {random.choice(addresses)}'
+        #    age = random.randint(19, 27)
+        #    tel_no = '05' + ''.join(random.choices(string.digits, k=9))
+        #    mail = f'{name.lower()}.{surname_initials[:1]}@edu.tr'  # Shorter email address
+        #
+        #    cursor.execute('''
+        #        INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
+        #        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        #    ''', (i, age, mail, tel_no, address, name, surname))
 
         total_student_count = 520
         #insert_students(cursor, total_student_count)
@@ -162,28 +227,16 @@ try:
         temizlikci_baslangic = admin_bitis
         #insert_temizlikci(cursor,temizlikci_baslangic, total_person_count)
 
-        teacher_ids = get_teacher_ids(cursor)
-        for teacher_id in teacher_ids:
-            course_id = teacher_id - 420
-            insert_teacher_avail(cursor,teacher_id,course_id)
-
-        ## Insert 500 persons
-        #for i in range(1, 551):
-        #    name = random.choice(names)
-        #    surname = random.choice(surnames)
-        #    surname_initials = surname[:2].lower()
-        #    address = f'{random.randint(1, 999)} {random.choice(addresses)}'
-        #    age = random.randint(19, 27)
-        #    tel_no = '05' + ''.join(random.choices(string.digits, k=9))
-        #    mail = f'{name.lower()}.{surname_initials[:1]}@edu.tr'  # Shorter email address
-        #
-        #    cursor.execute('''
-        #        INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
-        #        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        #    ''', (i, age, mail, tel_no, address, name, surname))
+    
+        insert_teacher_avail(cursor)
+    
+        insert_section_request(cursor)
+        
+        activate_the_courses(cursor)
 
         connection.commit()
 
+        
 except mysql.connector.Error as e:
     print(f"Error: {e}")
 
