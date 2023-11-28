@@ -76,18 +76,16 @@ create table Fixed_Expense(
 );
 create table Material(
 	material_id int,
-	amount int,
+	value int,
 	stock_amount int,
 	primary key (material_id)
-);
+);	
+
 create table Additional_Expenses(
 	expense_id int,
-	week_no int,
-	material_id int,
 	name varchar(20),
 	amount int,
-	primary key (expense_id),
-	foreign key (material_id) references Material(material_id)
+	primary key (expense_id)
 );
 CREATE TABLE Teacher (
     teacher_id INT not null,
@@ -107,7 +105,6 @@ CREATE TABLE Course (
 create table Course_Uses_Material(
 	course_id int,
 	material_id int,
-	week_no int,
 	primary key (course_id,material_id),
 	foreign key (material_id) references Material(material_id),
 	foreign key (course_id) references Course(course_id)
