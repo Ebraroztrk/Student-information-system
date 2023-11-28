@@ -10,17 +10,17 @@ password = "327275"
 database = "ubs"
 
 # Commonly used arrays for names, surnames, and addresses
-#names = [
-#    'John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Christopher', 'Emma', 'Matthew', 'Olivia',
-#    'Daniel', 'Sophia', 'James', 'Ava', 'Joseph', 'Mia', 'Benjamin', 'Charlotte', 'Elijah', 'Amelia',
-#    'Samuel', 'Harper', 'Alexander', 'Evelyn', 'William', 'Abigail', 'Henry', 'Emily', 'Daniel', 'Elizabeth',
-#    'Matthew', 'Avery', 'Andrew', 'Sofia', 'Gabriel', 'Chloe', 'Jackson', 'Ella', 'Nathan', 'Grace', 'Oliver',
-#    'Liam', 'Madison', 'Ethan', 'Aria', 'Lucas', 'Scarlett', 'Isaac', 'Lily', 'Noah', 'Sophie', 'Logan', 'Zoe',
-#    'Caleb', 'Aurora', 'Ezra', 'Aaliyah', 'Sebastian', 'Aiden', 'Hannah', 'Wyatt', 'Nova', 'Grayson', 'Luna',
-#    'Leo', 'Stella', 'Hunter', 'Isla', 'Mason', 'Mila', 'Jack', 'Bella', 'Owen', 'Savannah', 'Eli', 'Layla',
-#    'Aiden', 'Scarlet', 'Jackson', 'Penelope', 'Carter', 'Avery', 'Evan', 'Natalie', 'Luke', 'Ellie', 'Levi', 'Hazel',
-#    'Isaiah', 'Aria', 'Lincoln', 'Grace', 'Landon', 'Addison', 'Olivia', 'Eleanor', 'Lucy', 'Claire']
-#
+names = [
+    'John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Christopher', 'Emma', 'Matthew', 'Olivia',
+    'Daniel', 'Sophia', 'James', 'Ava', 'Joseph', 'Mia', 'Benjamin', 'Charlotte', 'Elijah', 'Amelia',
+    'Samuel', 'Harper', 'Alexander', 'Evelyn', 'William', 'Abigail', 'Henry', 'Emily', 'Daniel', 'Elizabeth',
+    'Matthew', 'Avery', 'Andrew', 'Sofia', 'Gabriel', 'Chloe', 'Jackson', 'Ella', 'Nathan', 'Grace', 'Oliver',
+    'Liam', 'Madison', 'Ethan', 'Aria', 'Lucas', 'Scarlett', 'Isaac', 'Lily', 'Noah', 'Sophie', 'Logan', 'Zoe',
+    'Caleb', 'Aurora', 'Ezra', 'Aaliyah', 'Sebastian', 'Aiden', 'Hannah', 'Wyatt', 'Nova', 'Grayson', 'Luna',
+    'Leo', 'Stella', 'Hunter', 'Isla', 'Mason', 'Mila', 'Jack', 'Bella', 'Owen', 'Savannah', 'Eli', 'Layla',
+    'Aiden', 'Scarlet', 'Jackson', 'Penelope', 'Carter', 'Avery', 'Evan', 'Natalie', 'Luke', 'Ellie', 'Levi', 'Hazel',
+    'Isaiah', 'Aria', 'Lincoln', 'Grace', 'Landon', 'Addison', 'Olivia', 'Eleanor', 'Lucy', 'Claire']
+
 #surnames = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor',
 #            'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson',
 #            'Clark', 'Rodriguez', 'Lewis', 'Lee', 'Walker', 'Hall', 'Allen', 'Young', 'Hill', 'King', 'Scott', 'Green',
@@ -252,13 +252,58 @@ def get_students_program(cursor,student_id):
     results = cursor.fetchall()
     print(results)
 
+def create_parents(cursor):
+    student_ids = get_student_ids(cursor)
+    for student_id in student_ids:
+        name = random.choice(names)
+        tel_no = '05' + ''.join(random.choices(string.digits, k=9))
+        cursor.execute('''
+            SELECT p.surname
+            FROM person p
+            WHERE p.person_id = %s
+        ''', (student_id,))
+        # Fetch the result and get the surname from the tuple
+        surname_result = cursor.fetchone()
+        if surname_result:
+            surname = surname_result[0]
+            surname_initials = surname[:2].lower()
+            mail = f'{name.lower()}.{surname_initials[:1]}@exp.tr'
+            name_surname = name + " " + surname 
+            cursor.execute('''
+                INSERT INTO Parents(student_id, mail, tel_no, name_surname)
+                VALUES (%s, %s, %s, %s)
+            ''', (student_id, mail, tel_no, name_surname))
 
+def Insert_Materials(cursor):
+    num_of_materials = 24
+    for i in range (num_of_materials):
+        value = random.randint(1,50) * 100
+        stock_amount = random.randint(1,6)
+        cursor.execute('''
+            INSERT INTO Material(material_id,value,stock_amount)
+            VALUES (%s, %s, %s)
+        ''', (i, value, stock_amount))
 
+def course_uses_material(cursor,course_id,material_id):
+     cursor.execute('''
+        INSERT INTO Course_Uses_Material (course_id,material_id) 
+        VALUES(%s,%s)
+    ''',(course_id,material_id))
 
+def get_total_salary(cursor):
+    cursor.execute('''
+        SELECT SUM(salary) 
+        FROM employee
+    ''')
+    value = cursor.fetchall()
+    return value
+    
+def insert_fix_expenses(cursor,expense_id):
 
-
-
-
+    cursor.execute('''
+        INSERT INTO Expenses(expense_id,material_id,)
+        VALUES (%s, %s, %s)
+    ''', (i, value, stock_amount))
 
 # ----------------------------------------------------------------------------------
 try:
@@ -318,13 +363,22 @@ try:
         
         #insert_student_request(cursor)
         #create_teacher_program(cursor)
-        for student_id in range(0, 25):
-            print(student_id)
-            create_student_program(cursor,student_id)
+
+        # -------------------------------------------------BURAYA HER OGRENCI ID ICIN DICEM ---------------------------------------
+        #for student_id in range(0, 421):
+        #    print(student_id)
+        #    create_student_program(cursor,student_id)
 
         #for student_id in range(1, active_student_count+1):
         #    get_students_program(cursor,student_id)
         #
+
+        #create_parents(cursor)
+
+        #Insert_Materials(cursor)
+        #get_total_salary(cursor)
+        course_uses_material(cursor,101,21)
+
         connection.commit()
 
         
