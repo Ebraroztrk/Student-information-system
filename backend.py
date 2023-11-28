@@ -2,7 +2,7 @@ import mysql.connector
 import random
 import string
 from datetime import datetime, timedelta
-from random import randint
+from random import randint, choice, sample
 
 host = "localhost"
 user = "root"
@@ -184,6 +184,32 @@ def insert_student_avail(cursor):
                 VALUES (%s, %s)
             ''', (student_id, day_section))
 
+def insert_student_request(corsor):
+    student_ids = get_student_ids(cursor)
+    for student_id in student_ids:
+        teacher_ids_subset = sample(get_teacher_ids(cursor), randint(2, 6))
+        for teacher_id in teacher_ids_subset:
+            course_id = teacher_id - 420
+            cursor.execute('''
+                    INSERT INTO Student_Request (student_id, course_id)
+                    VALUES (%s, %s)
+                ''', (student_id, course_id))
+def create_teacher_program(cursor):
+    cursor.execute('''
+        INSERT INTO teacher_program (teacher_id, day_section, course_id)
+        SELECT c.teacher_id, c.day_section, c.course_id
+        FROM Course c
+        WHERE c.active = true;
+    ''')
+
+def create_student_program(cursor):
+    cursor.execute('''
+        INSERT INTO student_program (student_id, day_section, course_id)
+        SELECT sr.student_id, c.day_section, c.course_id
+        FROM student_request sr
+        JOIN Course c ON sr.course_id = c.course_id
+        WHERE c.active = TRUE;
+    ''')
 # ------------------------------------------------------------------------------
 try:
     connection = mysql.connector.connect(
@@ -236,13 +262,13 @@ try:
 
     
         #insert_teacher_avail(cursor)
-        insert_student_avail(cursor)
+        #insert_student_avail(cursor)
         #insert_section_request(cursor)
         #activate_the_courses(cursor)
         
-        
-        
-        
+        #insert_student_request(cursor)
+        #create_teacher_program(cursor)
+        create_student_program(cursor)
         
         connection.commit()
 
