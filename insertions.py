@@ -10,16 +10,16 @@ password = "327275"
 database = "ubs"
 
 # Commonly used arrays for names, surnames, and addresses
-names = [
-    'John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Christopher', 'Emma', 'Matthew', 'Olivia',
-    'Daniel', 'Sophia', 'James', 'Ava', 'Joseph', 'Mia', 'Benjamin', 'Charlotte', 'Elijah', 'Amelia',
-    'Samuel', 'Harper', 'Alexander', 'Evelyn', 'William', 'Abigail', 'Henry', 'Emily', 'Daniel', 'Elizabeth',
-    'Matthew', 'Avery', 'Andrew', 'Sofia', 'Gabriel', 'Chloe', 'Jackson', 'Ella', 'Nathan', 'Grace', 'Oliver',
-    'Liam', 'Madison', 'Ethan', 'Aria', 'Lucas', 'Scarlett', 'Isaac', 'Lily', 'Noah', 'Sophie', 'Logan', 'Zoe',
-    'Caleb', 'Aurora', 'Ezra', 'Aaliyah', 'Sebastian', 'Aiden', 'Hannah', 'Wyatt', 'Nova', 'Grayson', 'Luna',
-    'Leo', 'Stella', 'Hunter', 'Isla', 'Mason', 'Mila', 'Jack', 'Bella', 'Owen', 'Savannah', 'Eli', 'Layla',
-    'Aiden', 'Scarlet', 'Jackson', 'Penelope', 'Carter', 'Avery', 'Evan', 'Natalie', 'Luke', 'Ellie', 'Levi', 'Hazel',
-    'Isaiah', 'Aria', 'Lincoln', 'Grace', 'Landon', 'Addison', 'Olivia', 'Eleanor', 'Lucy', 'Claire']
+#names = [
+#    'John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Christopher', 'Emma', 'Matthew', 'Olivia',
+#    'Daniel', 'Sophia', 'James', 'Ava', 'Joseph', 'Mia', 'Benjamin', 'Charlotte', 'Elijah', 'Amelia',
+#    'Samuel', 'Harper', 'Alexander', 'Evelyn', 'William', 'Abigail', 'Henry', 'Emily', 'Daniel', 'Elizabeth',
+#    'Matthew', 'Avery', 'Andrew', 'Sofia', 'Gabriel', 'Chloe', 'Jackson', 'Ella', 'Nathan', 'Grace', 'Oliver',
+#    'Liam', 'Madison', 'Ethan', 'Aria', 'Lucas', 'Scarlett', 'Isaac', 'Lily', 'Noah', 'Sophie', 'Logan', 'Zoe',
+#    'Caleb', 'Aurora', 'Ezra', 'Aaliyah', 'Sebastian', 'Aiden', 'Hannah', 'Wyatt', 'Nova', 'Grayson', 'Luna',
+#    'Leo', 'Stella', 'Hunter', 'Isla', 'Mason', 'Mila', 'Jack', 'Bella', 'Owen', 'Savannah', 'Eli', 'Layla',
+#    'Aiden', 'Scarlet', 'Jackson', 'Penelope', 'Carter', 'Avery', 'Evan', 'Natalie', 'Luke', 'Ellie', 'Levi', 'Hazel',
+#    'Isaiah', 'Aria', 'Lincoln', 'Grace', 'Landon', 'Addison', 'Olivia', 'Eleanor', 'Lucy', 'Claire']
 
 #surnames = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor',
 #            'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson',
@@ -295,15 +295,32 @@ def get_total_salary(cursor):
         SELECT SUM(salary) 
         FROM employee
     ''')
-    value = cursor.fetchall()
-    return value
+    result = cursor.fetchone()  
+    total_value = result[0] if result is not None else 0 
+    return total_value
     
-def insert_fix_expenses(cursor,expense_id):
-
+def get_material_cost(cursor):
     cursor.execute('''
-        INSERT INTO Expenses(expense_id,material_id,)
+        SELECT SUM(value * stock_amount) AS total_value
+        FROM Material;
+    ''')
+    result = cursor.fetchone()  
+    total_value = result[0] if result is not None else 0 
+    return total_value
+
+def insert_report_weekly(cursor, report_id, celaning_expense, other_expenses):
+    material_expense = get_material_cost(cursor)
+    cursor.execute('''
+        INSERT INTO Report_Weekly(report_id, material_expense, celaning_expense, other_expenses)
+        VALUES (%s, %s, %s, %s)
+    ''', (report_id, material_expense, celaning_expense, other_expenses))
+
+def insert_report_monthly(cursor,report_id,rent):
+    total_salary = get_total_salary(cursor)
+    cursor.execute('''
+        INSERT INTO Report_Monthly(report_id, rent, total_salary)
         VALUES (%s, %s, %s)
-    ''', (i, value, stock_amount))
+    ''', (report_id, rent, total_salary))
 
 # ----------------------------------------------------------------------------------
 try:
@@ -377,8 +394,10 @@ try:
 
         #Insert_Materials(cursor)
         #get_total_salary(cursor)
-        course_uses_material(cursor,101,21)
-
+        #course_uses_material(cursor,101,21)
+        #get_material_cost(cursor)
+        #insert_report_weekly(cursor,1,10000,20000)
+        insert_report_monthly(cursor,1,100000)
         connection.commit()
 
         
