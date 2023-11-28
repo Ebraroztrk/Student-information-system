@@ -116,28 +116,25 @@ def get_course_ids(cursor):
     course_ids = [row[0] for row in result]
     return course_ids
 
+def get_student_ids(cursor):
+    cursor.execute('''
+        SELECT student_id FROM Active_Student
+    ''')
+    result = cursor.fetchall()
+    student_ids = [row[0] for row in result]
+    return student_ids
+
 def create_random_sections():
     num_of_random_numbers = random.randint(0, 30)
-    random_numbers = []  # Initialize an empty list
+    random_numbers = []
 
     for i in range(num_of_random_numbers):
         first_digit = random.randint(0, 4)
         second_digit = random.randint(0, 4)
-        
-        # Check if the section is not in the list
         if (first_digit * 10 + second_digit) not in random_numbers:
-            random_numbers.append(first_digit * 10 + second_digit)  # Append to the list
-
+            random_numbers.append(first_digit * 10 + second_digit) 
     return random_numbers
-    #num_of_random_numbers = random.randint(0, 45)
-    #random_numbers
-    #for i in range (0,num_of_random_numbers):
-    #    random_numbers = [(i, j) for i in range(5) for j in range(5)]
-    #    random.shuffle(random_numbers)
-    #    
-    #selected_numbers = random_numbers
-    #return selected_numbers
-
+    
 def insert_teacher_avail(cursor):
     teacher_ids = get_teacher_ids(cursor)
     for teacher_id in teacher_ids:
@@ -176,6 +173,16 @@ def activate_the_courses(cursor):
             WHERE request_count = max_request_count
         );
     ''')
+
+def insert_student_avail(cursor):
+    student_ids = get_student_ids(cursor)
+    for student_id in student_ids:
+        selected_numbers = create_random_sections()
+        for day_section in selected_numbers:
+            cursor.execute('''
+                INSERT INTO Student_Section_Availability (student_id, available_section)
+                VALUES (%s, %s)
+            ''', (student_id, day_section))
 
 # ------------------------------------------------------------------------------
 try:
@@ -228,12 +235,15 @@ try:
         #insert_temizlikci(cursor,temizlikci_baslangic, total_person_count)
 
     
-        insert_teacher_avail(cursor)
-    
-        insert_section_request(cursor)
+        #insert_teacher_avail(cursor)
+        insert_student_avail(cursor)
+        #insert_section_request(cursor)
+        #activate_the_courses(cursor)
         
-        activate_the_courses(cursor)
-
+        
+        
+        
+        
         connection.commit()
 
         
