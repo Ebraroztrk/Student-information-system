@@ -125,7 +125,7 @@ def get_student_ids(cursor):
     return student_ids
 
 def create_random_sections():
-    num_of_random_numbers = random.randint(0, 30)
+    num_of_random_numbers = random.randint(40, 45)
     random_numbers = []
 
     for i in range(num_of_random_numbers):
@@ -163,16 +163,18 @@ def activate_the_courses(cursor):
     cursor.execute('''
         UPDATE course
         SET active = true
-        WHERE course_id IN (
-            SELECT course_id
+        WHERE (course_id, day_section) IN (
+            SELECT course_id, day_section
             FROM (
-                SELECT course_id, MAX(request_count) AS max_request_count
+                SELECT course_id, day_section, ROW_NUMBER() 
+                OVER (PARTITION BY course_id ORDER BY request_count DESC) AS row_num
                 FROM course
-                GROUP BY course_id
-            ) AS max_counts
-            WHERE request_count = max_request_count
+            ) AS ranked_sections
+            WHERE row_num <= 3
         );
     ''')
+
+
 
 def insert_student_avail(cursor):
     student_ids = get_student_ids(cursor)
@@ -202,15 +204,63 @@ def create_teacher_program(cursor):
         WHERE c.active = true;
     ''')
 
-def create_student_program(cursor):
+def create_student_program(cursor, student_id):
     cursor.execute('''
-        INSERT INTO student_program (student_id, day_section, course_id)
-        SELECT sr.student_id, c.day_section, c.course_id
-        FROM student_request sr
-        JOIN Course c ON sr.course_id = c.course_id
-        WHERE c.active = TRUE;
-    ''')
+        SELECT ssa.available_section
+        FROM Student_Section_Availability ssa
+        WHERE ssa.student_id = %s
+    ''', (student_id,))
+
+    avail_hours = cursor.fetchall()
+
+    cursor.execute('''
+        SELECT c.course_id, c.day_section
+        FROM course c
+        join student_request sr on c.course_id = sr.course_id and sr.student_id = %s
+        WHERE c.active
+    ''', (student_id,))
+    courses = cursor.fetchall()
+
+    added_courses = []  
+    added_hours = []
+    schedule = []      
+
+    for course in courses:
+        course_id, day_section = course
+        if course_id not in added_courses and day_section not in added_hours:
+            if day_section in [hour[0] for hour in avail_hours]:
+                schedule.append([day_section, course_id])
+                added_courses.append(course_id)
+                added_hours.append(day_section)
+
+    print("Schedule:", schedule)
+    
+    for schedule1 in schedule:
+        day_section, course_id = schedule1
+        cursor.execute('''
+            INSERT INTO Student_Program(student_id,day_section,course_id)
+            VALUES(%s,%s,%s)
+        ''', (student_id,day_section,course_id))
+
 # ------------------------------------------------------------------------------
+def get_students_program(cursor,student_id):
+    cursor.execute('''
+        select sp.student_id,sp.day_section, sp.course_id
+        from student_program sp
+        where sp.student_id = %s 
+    ''',(student_id,))
+    results = cursor.fetchall()
+    print(results)
+
+
+
+
+
+
+
+
+
+# ----------------------------------------------------------------------------------
 try:
     connection = mysql.connector.connect(
         host=host,
@@ -268,8 +318,13 @@ try:
         
         #insert_student_request(cursor)
         #create_teacher_program(cursor)
-        create_student_program(cursor)
-        
+        for student_id in range(0, 25):
+            print(student_id)
+            create_student_program(cursor,student_id)
+
+        #for student_id in range(1, active_student_count+1):
+        #    get_students_program(cursor,student_id)
+        #
         connection.commit()
 
         
