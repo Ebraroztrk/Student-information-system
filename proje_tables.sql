@@ -210,4 +210,12 @@ BEGIN
     END IF;
 END;
 
+
+CREATE TRIGGER after_insert_on_Student_program
+AFTER INSERT ON student_program
+FOR EACH ROW
+BEGIN
+    DELETE FROM student_section_availability ssa
+    WHERE ssa.available_section = NEW.day_section AND ssa.student_id = NEW.student_id;
+END;
 -- -------------------------------------------------------------------------
