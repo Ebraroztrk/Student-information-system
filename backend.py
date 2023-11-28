@@ -101,6 +101,33 @@ def insert_temizlikci(cursor,temizlikci_baslangic,total_person_count):
             VALUES (%s)
         ''', (tem_id,))
 
+def get_teacher_ids(cursor):
+    cursor.execute('''
+        SELECT teacher_id FROM Teacher
+    ''')
+    result = cursor.fetchall()
+    return [row[0] for row in result]
+
+def insert_teacher_avail(cursor, teacher_id, course_id):
+    # Create a list of unique combinations of first and second digits between 0-4
+    random_numbers = [(i, j) for i in range(5) for j in range(5)]
+    random.shuffle(random_numbers)
+
+    # Select a random subset of the list
+    num_of_random_numbers = random.randint(0, len(random_numbers))
+    selected_numbers = random_numbers[:num_of_random_numbers]
+
+    for first_digit, second_digit in selected_numbers:
+        day_section = first_digit * 10 + second_digit
+        cursor.execute('''
+            INSERT INTO Teacher_Section_Availability (teacher_id, course_id, available_section)
+            VALUES (%s, %s, %s)
+        ''', (teacher_id, course_id, day_section))
+
+
+
+
+# ------------------------------------------------------------------------------
 try:
     connection = mysql.connector.connect(
         host=host,
@@ -129,12 +156,16 @@ try:
 
         admin_baslangic = total_student_count+teacher_count
         admin_bitis = admin_baslangic + 6
-        insert_admins(cursor,admin_baslangic,admin_bitis)
+        #insert_admins(cursor,admin_baslangic,admin_bitis)
 
         total_person_count = 550
         temizlikci_baslangic = admin_bitis
-        insert_temizlikci(cursor,temizlikci_baslangic, total_person_count)
+        #insert_temizlikci(cursor,temizlikci_baslangic, total_person_count)
 
+        teacher_ids = get_teacher_ids(cursor)
+        for teacher_id in teacher_ids:
+            course_id = teacher_id - 420
+            insert_teacher_avail(cursor,teacher_id,course_id)
 
         ## Insert 500 persons
         #for i in range(1, 551):
