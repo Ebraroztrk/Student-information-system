@@ -106,10 +106,10 @@ class UBSManagementSystem:
             ''', (student_id, day_section))
 
     def __init__(self, root):
+
         self.root = root
         self.root.title("UBS Management System")
         self.root.geometry("1024x768") 
-        
         # Arka plan rengi
         background_color = "#202C33"
         # Buton rengi
@@ -202,9 +202,14 @@ class UBSManagementSystem:
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.btn_insert = ttk.Button(self.second_toolbar, text="ogrencinin istedigi ders", command=self.open_request_insert)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        root.protocol("WM_DELETE_WINDOW", self.on_close)
         ###################################################################################
         ##FUNCTIONS
 
+    def on_close(self):
+        connection.commit()
+        connection.close()
+        root.destroy()
 
     def show_all_admins(self):
         window = tk.Toplevel(self.root)
@@ -813,7 +818,6 @@ class UBSManagementSystem:
     def close_window(self):
         root.destroy()
 
-
 class InsertTeacher(tk.Toplevel):
     def __init__(self, insert_callback):
         super().__init__()
@@ -970,4 +974,5 @@ class InsertDialog(tk.Toplevel):
 if __name__ == "__main__":
     root = tk.Tk()
     app = UBSManagementSystem(root)
+    
     root.mainloop()
