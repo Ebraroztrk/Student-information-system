@@ -20,6 +20,10 @@ connection = mysql.connector.connect(
 )
 cursor = connection.cursor()
 
+
+#-----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------GET_METHODLARI ----------------------------------------------------
+#-------------------------------------------------FRONTEND--------------------------------------------------------
 def get_all_students():
     cursor.execute('''
         select *
@@ -395,6 +399,7 @@ def print_program(course_array):
 
 
 # -------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------INSERTIONLAR ICIN KULLANILACAK METHODLAR ----------------------------------
 #yeni eklenen kisinin isdini almak icin
 def get_person_count():
     cursor.execute('''
@@ -452,8 +457,37 @@ def convert_section_to_number(day_section):
     second_digit = time_slots.index(section) 
     
     return first_digit * 10 + second_digit
-#------------------------------------------------------------------------------------------------------------------------
 
+def insert_person(person_id,age,mail,tel_no,address,name,surname):
+    cursor.execute('''
+        INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (i, age, mail, tel_no, address, name, surname))
+
+#------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------INSERTION METHODLARI-------------------------------------------------------
+#-----------------------------------------------FRONTENDE DAHIL----------------------------------------------------------
+
+def insert_active_student(department,age,mail,tel_no,address,name,surname):
+    student_id = get_person_count()
+    cursor.execute('''
+        INSERT INTO Student (student_id, department)
+        VALUES (%s, %s)
+    ''', (student_id, department))
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
         
