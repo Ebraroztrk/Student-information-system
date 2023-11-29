@@ -54,6 +54,7 @@ class UBSManagementSystem:
         self.students_menu.add_command(label="Tüm Öğrenciler", command=self.show_all_students)
         self.students_menu.add_command(label="Aktif Öğrenciler", command=self.show_active_students)
         self.students_menu.add_command(label="Mezun Öğrenciler", command=self.show_graduated_students)
+        self.students_menu.add_command(label="Öğrencinin programı",command = self.search_student_program)
         self.btn_students.config(menu=self.students_menu)
 
         # "Öğretmenler" butonu
@@ -174,8 +175,23 @@ class UBSManagementSystem:
         
         search_button.pack(pady=10)
 
+    def search_student_program(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğrenci Programı")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğrenci ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_student_program(entry.get()))
+        
+        search_button.pack(pady=10)
+
     def show_teacher_avail_hours(self, teacher_id):
-        print("A")
         program_data = self.get_teacher_available_hours(cursor, teacher_id)  # Use self to access the method
 
         # Arama penceresi oluştur
@@ -186,7 +202,19 @@ class UBSManagementSystem:
         text_widget = tk.Text(search_window, wrap=tk.WORD, width=100, height=10)
         text_widget.pack(padx=10, pady=10)
         text_widget.insert(tk.END, program_data)
-        
+
+    def show_student_program(self,student_id):
+        program_data = self.get_student_program(student_id)  # Use self to access the method
+
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğrenci Programı")
+
+        # Text widget'ını oluştur
+        text_widget = tk.Text(search_window, wrap=tk.WORD, width=100, height=10)
+        text_widget.pack(padx=10, pady=10)
+        text_widget.insert(tk.END, program_data)
+
     def show_teacher_program(self, teacher_id):
         print("A")
         program_data = self.get_teacher_available_hours(cursor, teacher_id)  # Use self to access the method
@@ -577,6 +605,19 @@ class UBSManagementSystem:
             schedule.append((course_id, day_section))
         return self.print_program(schedule)
         
+    
+    def get_student_program(self,student_id):
+        cursor.execute('''
+            SELECT sp.*
+            FROM student_program sp
+            WHERE sp.student_id = %s
+        ''', (student_id,))
+        values = cursor.fetchall()
+        schedule = []
+        for value in values:
+            student_id, day_section, course_id = value
+            schedule.append((course_id, day_section))
+        return self.print_program(schedule)
 
     def print_program(self,course_array):
         schedule = [["" for _ in range(len(time_slots))] for _ in range(len(days))]
