@@ -10,6 +10,8 @@ db_config = {
     'database': 'ubs',
 }
 
+days = ["Pzt", "Sali", "Crs", "Prs", "Cuma"]
+time_slots = ["08:30-10:30", "10:30-12:30", "12:30-14:30", "14:30-16:30", "16:30-18:30"]
 
 
 connection = mysql.connector.connect(**db_config)
@@ -22,13 +24,11 @@ class UBSManagementSystem:
         self.root = root
         self.root.title("UBS Management System")
         self.root.geometry("1024x768") 
-
+        
         # Arka plan rengi
         background_color = "#202C33"
-
         # Buton rengi
         button_color = "#009F78"
-
         # Yazı rengi
         text_color = "#FFFFFF"
 
@@ -64,6 +64,8 @@ class UBSManagementSystem:
         self.teachers_menu = tk.Menu(self.btn_teachers, tearoff=0)
         self.teachers_menu.add_command(label="Öğretmen Ara", command=self.search_teacher)
         self.teachers_menu.add_command(label="Tüm Öğretmenler", command=self.show_all_teachers)
+        self.teachers_menu.add_command(label="Öğretmenlerin Programları", command=self.search_teacher_avail_hours)
+        
         self.btn_teachers.config(menu=self.teachers_menu)
 
         # "Çalışanlar" butonu
@@ -75,9 +77,11 @@ class UBSManagementSystem:
         self.employees_menu.add_command(label="Çalışan Ara", command=self.get_employee_by_id)
 
         self.employees_menu.add_command(label="Öğretmenler", command=self.show_all_teachers)
-        self.employees_menu.add_command(label="Temizlikçiler", command=self.show_cleaners)
-        self.employees_menu.add_command(label="İdareciler", command=self.show_administrators)
-        self.employees_menu.add_command(label="Tüm Çalışanlar", command=self.show_all_employees)
+        self.employees_menu.add_command(label="Yöneticiler", command=self.show_all_admins)
+        ##admins'i ekle
+        #self.employees_menu.add_command(label="İdareciler", command=self.show_administrators)
+        ##all employees'i ekle
+        #self.employees_menu.add_command(label="Tüm Çalışanlar", command=self.em)
         self.btn_employees.config(menu=self.employees_menu)
 
         # "Aileler" butonu
@@ -96,22 +100,76 @@ class UBSManagementSystem:
         self.style.configure('TFrame', background=background_color)
 
         self.tab_general = ttk.Frame(self.notebook, style='TFrame')
-
-
-
         # "Generate Report" butonu
-        self.btn_generate_report = tk.Button(self.tab_general, text="Rapor Oluştur", command=self.generate_report, bg=button_color, fg=text_color)
+        self.btn_generate_report = tk.Button(self.tab_general, text="Rapor Oluştur",  bg=button_color, fg=text_color)
         self.btn_generate_report.pack(pady=20)
 
         self.notebook.pack(fill=tk.BOTH, expand=True)
+
         ###################################################################################
         ##FUNCTIONS
 
-   # def generate_message(self):
 
-    def generate_report(self):
-        messagebox.showinfo("Bilgi", "Rapor başarıyla oluşturuldu.")
+    def show_all_admins(self):
+        window = tk.Toplevel(self.root)
+        window.title("Tüm Yöneticiler")
+
+        scrollbar = ttk.Scrollbar(window, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+        tree = ttk.Treeview(window, yscrollcommand=scrollbar.set)
+        tree["columns"] = ("Id", "Yaş", "Mail", "Tel No.", "Adres", "Ad", "Soyad")
+        
+        for col in tree["columns"]:
+            tree.heading(col, text=col,anchor=tk.W)
+            tree.column(col, width=100,anchor=tk.W)
+        
+        data = self.get_all_admins(cursor)  # Use self to access the method
+        
+        for row in data:
+            tree.insert("", "end", values=row)
+        
+        scrollbar.config(command=tree.yview)
+        tree.pack(fill=tk.BOTH, expand=True)
     
+    def get_all_admins(self,cursor):
+        cursor.execute('''
+            SELECT p.* 
+            FROM Administrative_staff a
+            join employee e on a.personel_id = e.employee_id
+            join person p on e.employee_id = p.person_id
+        ''')
+        values = cursor.fetchall()
+        return values
+
+    def search_teacher_avail_hours(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğretmen Programı")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğretmen ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_teacher_avail_hours(entry.get()))
+        
+        search_button.pack(pady=10)
+
+    def show_teacher_avail_hours(self, teacher_id):
+        print("A")
+        program_data = self.get_teacher_available_hours(cursor, teacher_id)  # Use self to access the method
+
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğretmen Programı")
+
+        # Text widget'ını oluştur
+        text_widget = tk.Text(search_window, wrap=tk.WORD, width=100, height=10)
+        text_widget.pack(padx=10, pady=10)
+        text_widget.insert(tk.END, program_data)
+           
     def show_all_students(self):
         window = tk.Toplevel(self.root)
         window.title("Tüm Öğrenciler")
@@ -222,6 +280,7 @@ class UBSManagementSystem:
         tree.pack(fill=tk.BOTH, expand=True)
 
     def search_teacher(self):
+        
         # Arama penceresi oluştur
         search_window = tk.Toplevel(self.root)
         search_window.title("Öğretmen Ara")
@@ -242,8 +301,7 @@ class UBSManagementSystem:
         teacher_id, name, surname, salary, course = teacher_info
         message = f"Öğretmen ID: {teacher_id}\nAd: {name}\nSoyad: {surname}\nMaaş: {salary} TL\nDers Kodu: {course}\n"
         messagebox.showinfo("Öğretmen Bilgileri", message)
-
-        
+      
     def show_cleaners(self):
 
         window = tk.Toplevel(self.root)
@@ -290,7 +348,6 @@ class UBSManagementSystem:
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_employee_info(entry.get()))
         search_button.pack(pady=10)
 
-    
     def show_all_parents(self):
         window = tk.Toplevel(self.root)
         window.title("Tüm Aileler")
@@ -332,10 +389,11 @@ class UBSManagementSystem:
         parent_info = self.get_parent(cursor,student_id)
         print(parent_info)
         student_id,mail,tel_no,name_surname=parent_info
-        message = f"Öğrenci İd: {student_id}\nMail: {mail}\nTelefon Numarası: {tel_no}\nAd Soyad{name_surname}"
+        message = f"Öğrenci İd: {student_id}\nMail: {mail}\nTelefon Numarası: {tel_no}\nAd Soyad:{name_surname}"
         messagebox.showinfo("Aile Bilgiler", message)
 
     def search_parent(self):
+
         # Arama penceresi oluştur
         search_window = tk.Toplevel(self.root)
         search_window.title("Aile Ara")
@@ -350,21 +408,9 @@ class UBSManagementSystem:
         print("asdsclear")
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_parent_info(entry.get()))
         search_button.pack(pady=10)
+    
 
-
-
-    def show_administrators(self):
-        messagebox.showinfo("İdareciler", "İdareci bilgileri burada görüntülenecek.")
-
-    def show_all_employees(self):
-        messagebox.showinfo("Tüm Çalışanlar", "Tüm çalışan bilgileri burada görüntülenecek.")
-
-    def show_employees(self):
-        self.notebook.select(self.tab_employees)
-
-    def show_families(self):
-        messagebox.showinfo("Aileler", "Aile bilgileri burada görüntülenecek.")
-
+    #####################################################
     def get_all_students(self,cursor):
         cursor.execute('''
             select s.student_id ,p.name ,p.surname ,p.age ,s.department,p.mail,p.tel_no,p.address
@@ -471,6 +517,38 @@ class UBSManagementSystem:
         values = cursor.fetchone()
         return values
     
+    def get_teacher_available_hours(self,cursor,teacher_id):
+        cursor.execute('''
+            SELECT t.*
+            FROM teacher_section_availability t
+            where t.teacher_id = %s
+        ''',(teacher_id,))
+        values = cursor.fetchall()
+        schedule = []
+        for value in values:
+            teacher_id, course_id, day_section = value
+            schedule.append((course_id, day_section))
+        
+        return self.print_program(schedule)
+    
+    def print_program(self,course_array):
+        schedule = [["" for _ in range(len(time_slots))] for _ in range(len(days))]
+
+        for course_id, day_section in course_array:
+            day_index = day_section // 10
+            time_slot_index = day_section % 10
+            schedule[day_index][time_slot_index] = str(course_id)
+
+        schedule_program = ("\t\t" + "\t\t".join(time_slot for time_slot in time_slots)) + "\n"
+
+        for i, day in enumerate(days):
+            schedule_program+=(f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]))
+            schedule_program+="\n"
+        return schedule_program
+        
+    def close_window(self):
+        root.destroy()
+
 
 
 if __name__ == "__main__":
