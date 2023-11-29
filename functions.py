@@ -245,6 +245,7 @@ def get_student_request(student_id):
     values = cursor.fetchall()
     print(values)
     return values
+
 def get_student_available_sections(student_id):
     cursor.execute('''
         SELECT sc.*
@@ -460,15 +461,6 @@ def get_request_count():
     request_count_int = int(count_value)
     return request_count_int
 
-def get_course_count():
-    cursor.execute('''
-        SELECT course_id FROM course ORDER BY course_id DESC LIMIT 1;
-    ''')
-    course_count_tuple = cursor.fetchone()
-    count_value = course_count_tuple[0]
-    course_count_int = int(count_value)
-    return course_count_int
-
 def create_random_sections():
     num_of_random_numbers = random.randint(40, 45)
     random_numbers = []
@@ -556,7 +548,50 @@ def insert_teacher(age,mail,tel_no,address,name,surname,salary,course_id):
             VALUES (%s, %s, %s)
         ''', (teacher_id, course_id, day_section))
 
+#ogrenci course_idler icin requestlerde buluncak
+def insert_student_request(student_id,course_id):
+    cursor.execute('''
+        INSERT INTO Student_Request (student_id, course_id)
+        VALUES (%s, %s)
+    ''', (student_id, course_id))
 
+#Ogrenci derslerini sectikten sonra 1 kere pogram olusturabilir.
+def create_student_program(student_id):
+    cursor.execute('''
+        SELECT ssa.available_section
+        FROM Student_Section_Availability ssa
+        WHERE ssa.student_id = %s
+    ''', (student_id,))
+
+    avail_hours = cursor.fetchall()
+
+    cursor.execute('''
+        SELECT c.course_id, c.day_section
+        FROM course c
+        join student_request sr on c.course_id = sr.course_id and sr.student_id = %s
+        WHERE c.active
+    ''', (student_id,))
+    courses = cursor.fetchall()
+
+    added_courses = []  
+    added_hours = []
+    schedule = []      
+
+    for course in courses:
+        course_id, day_section = course
+        if course_id not in added_courses and day_section not in added_hours:
+            if day_section in [hour[0] for hour in avail_hours]:
+                schedule.append([day_section, course_id])
+                added_courses.append(course_id)
+                added_hours.append(day_section)
+    
+    for schedule1 in schedule:
+        day_section, course_id = schedule1
+        cursor.execute('''
+            INSERT INTO Student_Program(student_id,day_section,course_id)
+            VALUES(%s,%s,%s)
+        ''', (student_id,day_section,course_id))
+    
 #------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
