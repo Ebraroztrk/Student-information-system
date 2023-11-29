@@ -110,7 +110,16 @@ def get_employee(employee_id):
     print (values)
     return values
 
+def get_student_by_id(student_id):
+    cursor.execute('''
+        SELECT p.*
+        FROM person p
+        JOIN student s ON p.person_id = s.student_id
+        WHERE s.student_id = %s
+    ''', (student_id,))
 
+    student = cursor.fetchone()
+    print(student)
 
 def get_admin(personel_id):
     cursor.execute('''
@@ -458,39 +467,44 @@ def convert_section_to_number(day_section):
     
     return first_digit * 10 + second_digit
 
+#Ogrenci falan eklendiginde otomatik person da olussun diye yazdim
 def insert_person(person_id,age,mail,tel_no,address,name,surname):
     cursor.execute('''
         INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-    ''', (i, age, mail, tel_no, address, name, surname))
+    ''', (person_id, age, mail, tel_no, address, name, surname))
+
+#admin falan eklendiginde otomatik person da olussun diye yazdim
+def insert_employee(employee_id,salary):
+    cursor.execute('''
+        INSERT INTO Employee (employee_id, salary)
+        VALUES (%s, %s)
+    ''', (employee_id, salary))
 
 #------------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------INSERTION METHODLARI-------------------------------------------------------
 #-----------------------------------------------FRONTENDE DAHIL----------------------------------------------------------
 
 def insert_active_student(department,age,mail,tel_no,address,name,surname):
-    student_id = get_person_count()
+    student_id = get_person_count()+1
+    insert_person(student_id,age,mail,tel_no,address,name,surname)
     cursor.execute('''
-        INSERT INTO Student (student_id, department)
+        INSERT INTO Student(student_id, department)
         VALUES (%s, %s)
     ''', (student_id, department))
+    
 
 
-
-
-
-
-
-
-
-
-
-
+def insert_admin(age,mail,tel_no,address,name,surname,salary):
+    employee_id = get_person_count()
+    cursor.execute('''
+        INSERT INTO Administrative_staff (employee_id)
+        VALUES (%s)
+    ''', (employee_id,))
 
 #------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
-        
         #user_input = "age,name,surname,address,mail,tel_no"
         #columns_to_display = [col.strip() for col in user_input.split(',')]
         #get_dynamic_person(*columns_to_display)
@@ -502,8 +516,8 @@ try:
         #get_material(10)
         #get_monthly_report(1)
         #get_weekly_report(1)
-        input = 'Crs', '12:30-14:30'
-        print(convert_section_to_number(input))
+        #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","ebrar","ozturk")
+        insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturk")
         connection.commit()
 
 except mysql.connector.Error as e:
