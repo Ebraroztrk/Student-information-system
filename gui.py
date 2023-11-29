@@ -56,6 +56,7 @@ class UBSManagementSystem:
         self.students_menu.add_command(label="Mezun Öğrenciler", command=self.show_graduated_students)
         self.students_menu.add_command(label="Öğrencinin programı",command = self.search_student_program)
         self.students_menu.add_command(label="Öğrencinin müsait saatleri",command = self.search_student_avail_hours)
+        self.students_menu.add_command(label="Öğnrecinin seçtiği dersler",command = self.search_student_request)
         self.btn_students.config(menu=self.students_menu)
 
         # "Öğretmenler" butonu
@@ -158,6 +159,21 @@ class UBSManagementSystem:
         # "Ara" butonu
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_teacher_avail_hours(entry.get()))
         
+        search_button.pack(pady=10)
+    def search_student_request(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğrenci İstekleri Ara")
+
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğrenci ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_student_request(cursor, entry.get()))
         search_button.pack(pady=10)
 
     def search_student_avail_hours(self):
@@ -340,6 +356,26 @@ class UBSManagementSystem:
         student_id, age, mail, tel_no, address, name, surname = student_info
         message = f"Öğrenci ID: {student_id}\nAd: {name}\nSoyad: {surname}\nYaş: {age}\nMail: {mail}\nCep No: {tel_no}\nAdres: {address}\n"
         messagebox.showinfo("Öğrenci Bilgileri", message)
+    def show_student_request(self, cursor, student_id):
+        # Get student requests using the provided student_id
+        requests_data = self.get_student_request(cursor, student_id)
+
+        # Display requests_data in a new window or widget as needed
+        # For example, you can use a Text widget or a messagebox
+
+        # Arama penceresi oluştur
+        requests_window = tk.Toplevel(self.root)
+        requests_window.title("Öğrenci İstekleri")
+
+        # Treeview widget'ını oluştur
+        tree = ttk.Treeview(requests_window, columns=("student_id", "course_id"))
+        tree.heading("student_id", text="Student ID", anchor=tk.W)
+        tree.heading("course_id", text="Course ID", anchor=tk.W)
+
+        for row in requests_data:
+            tree.insert("", "end", values=row)
+
+        tree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
     def show_all_teachers(self):
         window = tk.Toplevel(self.root)
@@ -605,6 +641,15 @@ class UBSManagementSystem:
         values = cursor.fetchone()
         return values
     
+    def get_student_request(self, cursor, student_id):
+        cursor.execute('''
+            SELECT sr.*
+            FROM student_request sr
+            WHERE sr.student_id = %s
+        ''', (student_id,))
+        values = cursor.fetchall()
+        return values
+
     def get_teacher_available_hours(self,cursor,teacher_id):
         cursor.execute('''
             SELECT t.*
@@ -676,7 +721,7 @@ class UBSManagementSystem:
     def close_window(self):
         root.destroy()
 
-
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
