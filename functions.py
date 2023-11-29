@@ -306,7 +306,7 @@ def print_program(course_array):
 
 try:
     if connection.is_connected():
-        user_input = "age,name,surname"
+        user_input = "age,name,surname,address,mail,tel_no"
         columns_to_display = [col.strip() for col in user_input.split(',')]
         get_dynamic_person(*columns_to_display)
         connection.commit()
