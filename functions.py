@@ -105,7 +105,8 @@ def get_employee(employee_id):
         select e.salary,p.*
         from employee e
         join person p on p.person_id = e.employee_id
-    ''')
+        where e.employee_id = %s
+    ''',(employee_id,))
     values = cursor.fetchall()
     print (values)
     return values
@@ -200,7 +201,7 @@ def get_teacher_available_hours(teacher_id):
     for value in values:
         teacher_id, course_id, day_section = value
         schedule.append((course_id, day_section))
-    print_program(schedule)
+    print(print_program(schedule))
     return values
 
 def get_all_section_requests():
@@ -400,9 +401,11 @@ def print_program(course_array):
         time_slot_index = day_section % 10
         schedule[day_index][time_slot_index] = str(course_id)
 
-    print("\t" + "\t".join(time_slot for time_slot in time_slots))
+    schedule_string = "\t" + "\t".join(time_slot for time_slot in time_slots) + "\n"
     for i, day in enumerate(days):
-        print(f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]))
+        schedule_string += f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]) + "\n"
+
+    return schedule_string
 
 
 
@@ -459,6 +462,15 @@ def get_request_count():
     request_count_int = int(count_value)
     return request_count_int
 
+def get_course_count():
+    cursor.execute('''
+        SELECT course_id FROM course ORDER BY course_id DESC LIMIT 1;
+    ''')
+    course_count_tuple = cursor.fetchone()
+    count_value = course_count_tuple[0]
+    course_count_int = int(count_value)
+    return course_count_int
+
 #day_section [pzt,3] gibi girdileri sayiya cevirmek icin 
 def convert_section_to_number(day_section):
     day, section = day_section
@@ -492,15 +504,32 @@ def insert_active_student(department,age,mail,tel_no,address,name,surname):
         INSERT INTO Student(student_id, department)
         VALUES (%s, %s)
     ''', (student_id, department))
-    
+
+    cursor.execute('''
+        INSERT INTO Active_Student(student_id)
+        VALUES (%s)
+    ''', (student_id,))
 
 
 def insert_admin(age,mail,tel_no,address,name,surname,salary):
-    employee_id = get_person_count()
+    employee_id = get_person_count()+1
+    insert_person(employee_id,age,mail,tel_no,address,name,surname)
+    insert_employee(employee_id,salary)
     cursor.execute('''
-        INSERT INTO Administrative_staff (employee_id)
+        INSERT INTO Administrative_staff (personel_id)
         VALUES (%s)
     ''', (employee_id,))
+
+def insert_teacher(age,mail,tel_no,address,name,surname,salary,course_id):
+    teacher_id = get_person_count() + 1
+
+    insert_person(teacher_id,age,mail,tel_no,address,name,surname)
+    insert_employee(teacher_id,salary)
+
+    cursor.execute('''
+        INSERT INTO Teacher (teacher_id,course_id)
+        VALUES (%s,%s)
+    ''', (teacher_id,course_id))
 
 #------------------------------------------------------------------------------------------------------------------------
 try:
@@ -517,7 +546,13 @@ try:
         #get_monthly_report(1)
         #get_weekly_report(1)
         #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","ebrar","ozturk")
-        insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturk")
+        #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturk")
+        #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
+        #get_active_student(554)
+        #get_teacher_available_hours(521)
+        #insert_admin(21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk",20000)
+        #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
+        get_active_student(559)
         connection.commit()
 
 except mysql.connector.Error as e:
