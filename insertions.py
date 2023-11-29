@@ -382,7 +382,7 @@ try:
         #create_teacher_program(cursor)
 
         # -------------------------------------------------BURAYA HER OGRENCI ID ICIN DICEM ---------------------------------------
-        #for student_id in range(0, 421):
+        #for student_id in range(2, 421):
         #    print(student_id)
         #    create_student_program(cursor,student_id)
 
@@ -397,7 +397,7 @@ try:
         #course_uses_material(cursor,101,21)
         #get_material_cost(cursor)
         #insert_report_weekly(cursor,1,10000,20000)
-        insert_report_monthly(cursor,1,100000)
+        #insert_report_monthly(cursor,1,100000)
         connection.commit()
 
         
