@@ -8,7 +8,7 @@ from tkinter import messagebox
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '12345678',
+    'password': '327275',
     'database': 'ubs',
 }
 
@@ -28,7 +28,20 @@ class UBSManagementSystem:
 
     def open_request_insert(self):
         insert_dialog = InsertStudentRequest(self.insert_student_request)
-
+    def activate_the_courses(self):
+        cursor.execute('''
+            UPDATE course
+            SET active = true
+            WHERE (course_id, day_section) IN (
+                SELECT course_id, day_section
+                FROM (
+                    SELECT course_id, day_section, ROW_NUMBER() 
+                    OVER (PARTITION BY course_id ORDER BY request_count DESC) AS row_num
+                    FROM course
+                ) AS ranked_sections
+                WHERE row_num <= 3
+            );
+        ''')
     def insert_student_request(self,student_id,course_id):
         cursor.execute('''
             INSERT INTO Student_Request (student_id, course_id)
@@ -110,6 +123,13 @@ class UBSManagementSystem:
                 VALUES(%s,%s,%s)
             ''', (student_id,day_section,course_id))
 
+    def create_teacher_program(self,teacher_id):
+        cursor.execute('''
+            INSERT INTO teacher_program (teacher_id, day_section, course_id)
+            SELECT c.teacher_id, c.day_section, c.course_id
+            FROM Course c
+            WHERE c.active = true and c.teacher_id = %s;
+        ''',(teacher_id,))
 
     def create_random_sections(self):
         num_of_random_numbers = random.randint(40, 45)
@@ -249,6 +269,10 @@ class UBSManagementSystem:
         self.btn_insert = ttk.Button(self.second_toolbar, text="ogrencinin istedigi ders", command=self.open_request_insert)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.btn_insert = ttk.Button(self.third_toolbar, text="ogrencinin programini olustur", command=self.search_student_for_program)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.btn_insert = ttk.Button(self.third_toolbar, text="ogretmenin programini olustur", command=self.search_teacher_for_program)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.btn_insert = ttk.Button(self.third_toolbar, text="dersleri aç", command=self.activate_the_courses)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         ###################################################################################
@@ -521,6 +545,21 @@ class UBSManagementSystem:
 
         # "Ara" butonu
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.create_student_program(entry.get()))
+        search_button.pack(pady=10)
+    
+    def search_teacher_for_program(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Ogretmen Ara")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Ogretmen ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.create_teacher_program(entry.get()))
         search_button.pack(pady=10)
 
     def show_student_info(self,student_id):
