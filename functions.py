@@ -263,6 +263,34 @@ def get_teacher_program(teacher_id):
     print_program(schedule)
     return values
 
+
+def get_dynamic_person(*columns):
+    view_name = f'dynamic_person_view_{"_".join(columns)}'
+    
+    # Check if the view exists
+    cursor.execute(f'SHOW TABLES LIKE "{view_name}"')
+    result = cursor.fetchone()
+
+    if result:
+        print(f"View {view_name} already exists.")
+    else:
+        query = f'''
+            CREATE VIEW {view_name} AS
+            SELECT {', '.join(columns)}
+            FROM person
+        '''
+        cursor.execute(query)
+        print(f"View {view_name} created successfully.")
+    
+    cursor.execute(f'''
+        SELECT *
+        FROM {view_name}
+    ''')
+    values = cursor.fetchall();
+    print (values)
+
+
+
 def print_program(course_array):
     schedule = [["" for _ in range(len(time_slots))] for _ in range(len(days))]
 
@@ -278,7 +306,9 @@ def print_program(course_array):
 
 try:
     if connection.is_connected():
-        get_teacher_available_hours(521)
+        user_input = "age,name,surname"
+        columns_to_display = [col.strip() for col in user_input.split(',')]
+        get_dynamic_person(*columns_to_display)
         connection.commit()
 
 except mysql.connector.Error as e:
