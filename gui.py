@@ -74,6 +74,43 @@ class UBSManagementSystem:
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         ''', (person_id, age, mail, tel_no, address, name, surname))
 
+    def create_student_program(self,student_id):
+        cursor.execute('''
+            SELECT ssa.available_section
+            FROM Student_Section_Availability ssa
+            WHERE ssa.student_id = %s
+        ''', (student_id,))
+
+        avail_hours = cursor.fetchall()
+
+        cursor.execute('''
+            SELECT c.course_id, c.day_section
+            FROM course c
+            join student_request sr on c.course_id = sr.course_id and sr.student_id = %s
+            WHERE c.active
+        ''', (student_id,))
+        courses = cursor.fetchall()
+
+        added_courses = []  
+        added_hours = []
+        schedule = []      
+
+        for course in courses:
+            course_id, day_section = course
+            if course_id not in added_courses and day_section not in added_hours:
+                if day_section in [hour[0] for hour in avail_hours]:
+                    schedule.append([day_section, course_id])
+                    added_courses.append(course_id)
+                    added_hours.append(day_section)
+        
+        for schedule1 in schedule:
+            day_section, course_id = schedule1
+            cursor.execute('''
+                INSERT INTO Student_Program(student_id,day_section,course_id)
+                VALUES(%s,%s,%s)
+            ''', (student_id,day_section,course_id))
+
+
     def create_random_sections(self):
         num_of_random_numbers = random.randint(40, 45)
         self.random_numbers = []
@@ -128,7 +165,8 @@ class UBSManagementSystem:
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.second_toolbar = tk.Frame(self.root, bg=background_color)
         self.second_toolbar.pack(side=tk.TOP, fill=tk.X)
-
+        self.third_toolbar = tk.Frame(self.root, bg=background_color)
+        self.third_toolbar.pack(side=tk.TOP, fill=tk.X)
         # "Öğrenciler" butonu
         self.btn_students = tk.Menubutton(self.toolbar, text="Öğrenciler", bg=button_color, fg=text_color, borderwidth=2, relief="solid")
         self.btn_students.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -201,6 +239,8 @@ class UBSManagementSystem:
         self.btn_insert = ttk.Button(self.second_toolbar, text="Ogretmen Ekle", command=self.open_teacher_insert)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.btn_insert = ttk.Button(self.second_toolbar, text="ogrencinin istedigi ders", command=self.open_request_insert)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.btn_insert = ttk.Button(self.third_toolbar, text="ogrencinin programini olustur", command=self.search_student_for_program)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         ###################################################################################
@@ -447,7 +487,22 @@ class UBSManagementSystem:
         # "Ara" butonu
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_student_info(entry.get()))
         search_button.pack(pady=10)
-    
+
+    def search_student_for_program(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğrenci Ara")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğrenci ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.create_student_program(entry.get()))
+        search_button.pack(pady=10)
+
     def show_student_info(self,student_id):
         student_info = self.get_student_by_id(cursor,student_id)  # Use self to access the method
         student_id, age, mail, tel_no, address, name, surname = student_info
