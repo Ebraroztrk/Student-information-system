@@ -6,7 +6,7 @@ from tkinter import messagebox
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '12345678',
+    'password': '327275',
     'database': 'ubs',
 }
 
@@ -64,7 +64,8 @@ class UBSManagementSystem:
         self.teachers_menu = tk.Menu(self.btn_teachers, tearoff=0)
         self.teachers_menu.add_command(label="Öğretmen Ara", command=self.search_teacher)
         self.teachers_menu.add_command(label="Tüm Öğretmenler", command=self.show_all_teachers)
-        self.teachers_menu.add_command(label="Öğretmenlerin Programları", command=self.search_teacher_avail_hours)
+        self.teachers_menu.add_command(label="Öğretmenlerin müsait_saatleri", command=self.search_teacher_avail_hours)
+        self.teachers_menu.add_command(label="Öğremenin programı",command = self.search_teacher_program)
         
         self.btn_teachers.config(menu=self.teachers_menu)
 
@@ -144,7 +145,7 @@ class UBSManagementSystem:
     def search_teacher_avail_hours(self):
         # Arama penceresi oluştur
         search_window = tk.Toplevel(self.root)
-        search_window.title("Öğretmen Programı")
+        search_window.title("Öğretmen musait saatleri")
         # Etiket ve giriş kutusu oluştur
         label = tk.Label(search_window, text="Öğretmen ID'sini girin:")
         label.pack(pady=5)
@@ -154,6 +155,22 @@ class UBSManagementSystem:
 
         # "Ara" butonu
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_teacher_avail_hours(entry.get()))
+        
+        search_button.pack(pady=10)
+
+    def search_teacher_program(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğretmen Programı")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğretmen ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_teacher_program(entry.get()))
         
         search_button.pack(pady=10)
 
@@ -169,7 +186,20 @@ class UBSManagementSystem:
         text_widget = tk.Text(search_window, wrap=tk.WORD, width=100, height=10)
         text_widget.pack(padx=10, pady=10)
         text_widget.insert(tk.END, program_data)
-           
+
+    def show_teacher_program(self, teacher_id):
+        print("A")
+        program_data = self.get_teacher_program(teacher_id)  # Use self to access the method
+
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Öğretmen Programı")
+
+        # Text widget'ını oluştur
+        text_widget = tk.Text(search_window, wrap=tk.WORD, width=100, height=10)
+        text_widget.pack(padx=10, pady=10)
+        text_widget.insert(tk.END, program_data)   
+
     def show_all_students(self):
         window = tk.Toplevel(self.root)
         window.title("Tüm Öğrenciler")
@@ -334,17 +364,17 @@ class UBSManagementSystem:
         tree.pack(fill=tk.BOTH, expand=True)
         
     def get_employee_by_id(self):
-    # Arama penceresi oluştur
+        
         search_window = tk.Toplevel(self.root)
         search_window.title("Çalışan Ara")
-    # Etiket ve giriş kutusu oluştur
+        
         label = tk.Label(search_window, text="Çalışan ID'sini girin:")
         label.pack(pady=5)
 
         entry = tk.Entry(search_window)
         entry.pack(pady=5)
-
-    # "Ara" butonu
+    
+        
         search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_employee_info(entry.get()))
         search_button.pack(pady=10)
 
@@ -369,6 +399,10 @@ class UBSManagementSystem:
         
         scrollbar.config(command=tree.yview)
         tree.pack(fill=tk.BOTH, expand=True)
+
+    
+
+
 
     def show_employee_info(self, employee_id):
         
@@ -531,6 +565,20 @@ class UBSManagementSystem:
         
         return self.print_program(schedule)
     
+    def get_teacher_program(self, teacher_id):
+        cursor.execute('''
+            SELECT sp.*
+            FROM teacher_program sp
+            WHERE sp.teacher_id = %s
+        ''', (teacher_id,))
+        values = cursor.fetchall()
+        schedule = []
+        for value in values:
+            teacher_id, day_section, course_id = value
+            schedule.append((course_id, day_section))
+        return self.print_program(schedule)
+        
+
     def print_program(self,course_array):
         schedule = [["" for _ in range(len(time_slots))] for _ in range(len(days))]
 
