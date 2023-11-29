@@ -625,6 +625,15 @@ def create_teacher_program(teacher_id):
         FROM Course c
         WHERE c.active = true and c.teacher_id = %s;
     ''',(teacher_id,))
+
+def insert_material(value,stock_amount):
+    material_id = get_material_count()+1
+    cursor.execute('''
+        INSERT INTO Material(material_id,value,stock_amount)
+        VALUES (%s, %s, %s)
+    ''', (material_id, value, stock_amount))    
+
+
 #------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
@@ -659,6 +668,8 @@ try:
         #insert_section_request(113, "Sali","08:30-10:30")
         #get_section_request(113)
         #activate_the_courses()
+        #insert_material(3000,3)
+        get_material(24)
         connection.commit()
 
 except mysql.connector.Error as e:
