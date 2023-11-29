@@ -473,8 +473,7 @@ def create_random_sections():
     return random_numbers
 
 #day_section [pzt,3] gibi girdileri sayiya cevirmek icin 
-def convert_section_to_number(day_section):
-    day, section = day_section
+def convert_section_to_number(day,section):
     first_digit = days.index(day) 
     second_digit = time_slots.index(section) 
     
@@ -591,7 +590,34 @@ def create_student_program(student_id):
             INSERT INTO Student_Program(student_id,day_section,course_id)
             VALUES(%s,%s,%s)
         ''', (student_id,day_section,course_id))
-    
+
+#yeni eklenen ders icin requestler alincak
+#day, ["Pzt", "Sali", "Crs", "Prs", "Cuma"]'dan biri olcak.
+#section ["08:30-10:30", "10:30-12:30", "12:30-14:30", "14:30-16:30", "16:30-18:30"] dan biri olcak
+def insert_section_request(course_id,day,section):
+    day_section = convert_section_to_number(day,section)
+    request_id = get_request_count()+1
+    cursor.execute('''
+        INSERT INTO Section_Request (request_id,day_section,course_id)
+        VALUES (%s, %s, %s)
+    ''', (request_id, day_section, course_id))
+
+#max countu olan 3 ders aktive edilcek
+def activate_the_courses():
+    cursor.execute('''
+        UPDATE course
+        SET active = true
+        WHERE (course_id, day_section) IN (
+            SELECT course_id, day_section
+            FROM (
+                SELECT course_id, day_section, ROW_NUMBER() 
+                OVER (PARTITION BY course_id ORDER BY request_count DESC) AS row_num
+                FROM course
+            ) AS ranked_sections
+            WHERE row_num <= 3
+        );
+    ''')
+
 #------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
@@ -615,8 +641,16 @@ try:
         #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
         #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
         #insert_teacher(21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk",30000,114)
-        get_all_teachers()
-        get_teacher_available_hours(570)
+        #get_all_teachers()
+        #get_teacher_available_hours(570)
+        #insert_student_request(560,101)
+        #create_student_program(560)
+        #get_student_program(560)
+        #get_all_teachers()
+        #get_teacher_program(570)
+        #insert_section_request(113, "Sali","08:30-10:30")
+        #get_section_request(113)
+        #activate_the_courses()
         connection.commit()
 
 except mysql.connector.Error as e:
