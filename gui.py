@@ -25,7 +25,16 @@ class UBSManagementSystem:
         insert_dialog = InsertDialog(self.insert_active_student)
     def open_teacher_insert(self):
         insert_dialog = InsertTeacher(self.insert_teacher)
-    
+
+    def open_request_insert(self):
+        insert_dialog = InsertStudentRequest(self.insert_student_request)
+
+    def insert_student_request(self,student_id,course_id):
+        cursor.execute('''
+            INSERT INTO Student_Request (student_id, course_id)
+            VALUES (%s, %s)
+        ''', (student_id, course_id))
+
     def insert_employee(self,employee_id,salary):
         cursor.execute('''
             INSERT INTO Employee (employee_id, salary)
@@ -190,6 +199,8 @@ class UBSManagementSystem:
         self.btn_insert = ttk.Button(self.second_toolbar, text="Ogrenci Ekle", command=self.open_insert_dialog)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.btn_insert = ttk.Button(self.second_toolbar, text="Ogretmen Ekle", command=self.open_teacher_insert)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.btn_insert = ttk.Button(self.second_toolbar, text="ogrencinin istedigi ders", command=self.open_request_insert)
         self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         ###################################################################################
         ##FUNCTIONS
@@ -865,6 +876,36 @@ class InsertTeacher(tk.Toplevel):
         self.insert_callback(age,mail,tel_no,address, name, surname,salary,course_id)
         self.destroy()
 
+class InsertStudentRequest(tk.Toplevel):
+    def __init__(self, insert_callback):
+        super().__init__()
+        self.title("Insert Data")
+        self.student_id_label = ttk.Label(self, text="Student_id:")
+        self.course_id_label = ttk.Label(self, text="Course_id:")
+
+        self.student_id_entry = ttk.Entry(self)
+        self.course_id_entry = ttk.Entry(self)
+
+        self.insert_button = ttk.Button(self, text="Insert", command=self.insert_student_request)
+
+        self.student_id_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.course_id_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+
+        self.student_id_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.course_id_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+        self.insert_button.grid(row=8, column=0, columnspan=2, pady=10)
+
+        self.insert_callback = insert_callback
+
+
+
+    def insert_student_request(self):
+        student_id = self.student_id_entry.get()
+        course_id = self.course_id_entry.get()
+        # Call the insert function with the obtained values
+        self.insert_callback(student_id,course_id)
+        self.destroy()
 
 class InsertDialog(tk.Toplevel):
     def __init__(self, insert_callback):
