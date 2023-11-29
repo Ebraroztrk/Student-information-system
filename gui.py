@@ -86,11 +86,9 @@ class UBSManagementSystem:
 
         # "Aileler" butonunun altındaki menü
         self.families_menu = tk.Menu(self.btn_families, tearoff=0)
-        self.families_menu.add_command(label="Aile Ara", command=self.show_all_parents)
+        self.families_menu.add_command(label="Aile Ara", command=self.search_parent)
         self.families_menu.add_command(label="Tüm Aileler", command=self.show_all_parents)
         self.btn_families.config(menu=self.families_menu)
-
-
 
         # Notebook oluşturun
         self.notebook = ttk.Notebook(self.root)
@@ -108,6 +106,8 @@ class UBSManagementSystem:
         self.notebook.pack(fill=tk.BOTH, expand=True)
         ###################################################################################
         ##FUNCTIONS
+
+   # def generate_message(self):
 
     def generate_report(self):
         messagebox.showinfo("Bilgi", "Rapor başarıyla oluşturuldu.")
@@ -194,22 +194,10 @@ class UBSManagementSystem:
         search_button.pack(pady=10)
     
     def show_student_info(self,student_id):
-        self.clear_labels()
-
         student_info = self.get_student_by_id(cursor,student_id)  # Use self to access the method
         student_id, age, mail, tel_no, address, name, surname = student_info
-        labels = [
-            f"Öğrenci ID: {student_id}",
-            f"Ad: {name}",
-            f"Soyad: {surname}",
-            f"Yaş: {age}",
-            f"Mail: {mail}",
-            f"Cep No: {tel_no}",
-            f"Adres: {address}",
-        ]
-        for label_text in labels:
-            label = tk.Label(self.root, text=label_text, padx=10, pady=5)
-            label.pack(anchor="w")
+        message = f"Öğrenci ID: {student_id}\nAd: {name}\nSoyad: {surname}\nYaş: {age}\nMail: {mail}\nCep No: {tel_no}\nAdres: {address}\n"
+        messagebox.showinfo("Öğrenci Bilgileri", message)
 
     def show_all_teachers(self):
         window = tk.Toplevel(self.root)
@@ -249,20 +237,12 @@ class UBSManagementSystem:
         search_button.pack(pady=10)
 
     def show_teacher_info(self,teacher_id):
-
         self.clear_labels()
         teacher_info = self.get_teacher(cursor,teacher_id)  # Use self to access the method
         teacher_id, name, surname, salary, course = teacher_info
-        labels = [
-            f"Öğretmen ID: {teacher_id}",
-            f"Ad: {name}",
-            f"Soyad: {surname}",
-            f"Maaş: {salary} $",
-            f"Ders Kodu: {course}",
-        ]
-        for label_text in labels:
-            label = tk.Label(self.root, text=label_text, padx=10, pady=5)
-            label.pack(anchor="w")
+        message = f"Öğretmen ID: {teacher_id}\nAd: {name}\nSoyad: {surname}\nMaaş: {salary} TL\nDers Kodu: {course}\n"
+        messagebox.showinfo("Öğretmen Bilgileri", message)
+
         
     def show_cleaners(self):
 
@@ -333,12 +313,8 @@ class UBSManagementSystem:
         scrollbar.config(command=tree.yview)
         tree.pack(fill=tk.BOTH, expand=True)
 
-
-
-    
     def show_employee_info(self, employee_id):
-        print("SHOW EMPLOYEE INFO")
-    # Assuming you have a function to display employee info, modify as needed
+        
         employee_info = self.get_employee(cursor, employee_id)
         employee_id,salary=employee_info
         labels = [
@@ -351,8 +327,31 @@ class UBSManagementSystem:
             label.pack(anchor="w")
         
         print(employee_info)
-    # You can then display or use the employee_info as needed
-    # ...
+    
+    def show_parent_info(self,student_id):
+        parent_info = self.get_parent(cursor,student_id)
+        print(parent_info)
+        student_id,mail,tel_no,name_surname=parent_info
+        message = f"Öğrenci İd: {student_id}\nMail: {mail}\nTelefon Numarası: {tel_no}\nAd Soyad{name_surname}"
+        messagebox.showinfo("Aile Bilgiler", message)
+
+    def search_parent(self):
+        # Arama penceresi oluştur
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Aile Ara")
+        # Etiket ve giriş kutusu oluştur
+        label = tk.Label(search_window, text="Öğrenci ID'sini girin:")
+        label.pack(pady=5)
+
+        entry = tk.Entry(search_window)
+        entry.pack(pady=5)
+
+        # "Ara" butonu
+        print("asdsclear")
+        search_button = tk.Button(search_window, text="Ara", command=lambda: self.show_parent_info(entry.get()))
+        search_button.pack(pady=10)
+
+
 
     def show_administrators(self):
         messagebox.showinfo("İdareciler", "İdareci bilgileri burada görüntülenecek.")
@@ -442,16 +441,15 @@ class UBSManagementSystem:
         # Clear the list of labels
         self.labels = [] 
     
-    def get_employee(self, cursor, employee_id):
+    def get_employee(self,employee_id):
         cursor.execute('''
-            SELECT *
-            FROM employee e
-            WHERE employee_id = %s
-        ''', (employee_id,))
+            select e.salary,p.*
+            from employee e
+            join person p on p.person_id = e.employee_id
+        ''')
+        values = cursor.fetchone()
         
-        employee = cursor.fetchone()
-        print(employee)
-        return employee
+        return values
     
     def get_all_parents(self,cursor):
         cursor.execute('''
@@ -461,6 +459,20 @@ class UBSManagementSystem:
         ''')
         values = cursor.fetchall()
         return(values)
+    
+    def get_parent(self, cursor, student_id):
+        cursor.execute('''
+            SELECT p.*
+            FROM active_student s
+            JOIN parents p ON s.student_id = p.student_id
+            WHERE s.student_id = %s
+        ''', (student_id,))  # Pass student_id as a tuple
+
+        values = cursor.fetchone()
+        return values
+    
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = UBSManagementSystem(root)
