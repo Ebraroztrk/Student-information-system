@@ -1,5 +1,7 @@
 import tkinter as tk
 import mysql.connector
+import random
+from random import randint
 from tkinter import ttk
 from tkinter import messagebox
 
@@ -18,7 +20,81 @@ connection = mysql.connector.connect(**db_config)
 cursor = connection.cursor()
 
 class UBSManagementSystem:
+    
+    def open_insert_dialog(self):
+        insert_dialog = InsertDialog(self.insert_active_student)
+    def open_teacher_insert(self):
+        insert_dialog = InsertTeacher(self.insert_teacher)
+    
+    def insert_employee(self,employee_id,salary):
+        cursor.execute('''
+            INSERT INTO Employee (employee_id, salary)
+            VALUES (%s, %s)
+        ''', (employee_id, salary))
 
+    def insert_teacher(self,age,mail,tel_no,address,name,surname,salary,course_id):
+        teacher_id = self.get_person_count() + 1
+        self.insert_person(teacher_id,age,mail,tel_no,address,name,surname)
+        self.insert_employee(teacher_id,salary)
+
+        cursor.execute('''
+            INSERT INTO Teacher (teacher_id,course_id)
+            VALUES (%s,%s)
+        ''', (teacher_id,course_id))
+
+        selected_numbers = self.create_random_sections()
+        for day_section in selected_numbers:
+            cursor.execute('''
+                INSERT INTO Teacher_Section_Availability (teacher_id, course_id, available_section)
+                VALUES (%s, %s, %s)
+            ''', (teacher_id, course_id, day_section))
+
+
+    def get_person_count(self):
+        cursor.execute('''
+            SELECT person_id FROM person ORDER BY person_id DESC LIMIT 1;
+        ''')
+        person_count_tuple = cursor.fetchone()
+        count_value = person_count_tuple[0]
+        person_count_int = int(count_value)
+        return person_count_int
+
+    def insert_person(self,person_id,age,mail,tel_no,address,name,surname):
+        cursor.execute('''
+            INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (person_id, age, mail, tel_no, address, name, surname))
+
+    def create_random_sections(self):
+        num_of_random_numbers = random.randint(40, 45)
+        self.random_numbers = []
+
+        for i in range(num_of_random_numbers):
+            first_digit = random.randint(0, 4)
+            second_digit = random.randint(0, 4)
+            if (first_digit * 10 + second_digit) not in self.random_numbers:
+                self.random_numbers.append(first_digit * 10 + second_digit) 
+        return self.random_numbers
+
+    def insert_active_student(self,department,age,mail,tel_no,address,name,surname):
+        student_id = self.get_person_count()+1
+        self.insert_person(student_id,age,mail,tel_no,address,name,surname)
+        cursor.execute('''
+            INSERT INTO Student(student_id, department)
+            VALUES (%s, %s)
+        ''', (student_id, department))
+
+        cursor.execute('''
+            INSERT INTO Active_Student(student_id)
+            VALUES (%s)
+        ''', (student_id,))
+
+        selected_numbers = self.create_random_sections()
+        for day_section in selected_numbers:
+            cursor.execute('''
+                INSERT INTO Student_Section_Availability (student_id, available_section)
+                VALUES (%s, %s)
+            ''', (student_id, day_section))
 
     def __init__(self, root):
         self.root = root
@@ -32,6 +108,8 @@ class UBSManagementSystem:
         # Yazı rengi
         text_color = "#FFFFFF"
 
+        labels = []
+        
         style = ttk.Style(self.root)
         style.configure('TButton', font=('Arial', 12))
         style.configure('TLabel', font=('Arial', 12), background=background_color, foreground=text_color)
@@ -39,10 +117,8 @@ class UBSManagementSystem:
         # Toolbar oluşturun
         self.toolbar = tk.Frame(self.root, bg=background_color)
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
-
-        #Labels
-        self.labels = []
-    
+        self.second_toolbar = tk.Frame(self.root, bg=background_color)
+        self.second_toolbar.pack(side=tk.TOP, fill=tk.X)
 
         # "Öğrenciler" butonu
         self.btn_students = tk.Menubutton(self.toolbar, text="Öğrenciler", bg=button_color, fg=text_color, borderwidth=2, relief="solid")
@@ -110,6 +186,11 @@ class UBSManagementSystem:
 
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
+
+        self.btn_insert = ttk.Button(self.second_toolbar, text="Ogrenci Ekle", command=self.open_insert_dialog)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.btn_insert = ttk.Button(self.second_toolbar, text="Ogretmen Ekle", command=self.open_teacher_insert)
+        self.btn_insert.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         ###################################################################################
         ##FUNCTIONS
 
@@ -260,7 +341,7 @@ class UBSManagementSystem:
 
     def show_teacher_program(self, teacher_id):
         print("A")
-        program_data = self.get_teacher_available_hours(cursor, teacher_id)  # Use self to access the method
+        program_data = self.get_teacher_program(cursor, teacher_id)  # Use self to access the method
 
         # Arama penceresi oluştur
         search_window = tk.Toplevel(self.root)
@@ -664,7 +745,7 @@ class UBSManagementSystem:
         
         return self.print_program(schedule)
     
-    def get_teacher_program(self, teacher_id):
+    def get_teacher_program(self, cursor,teacher_id):
         cursor.execute('''
             SELECT sp.*
             FROM teacher_program sp
@@ -721,7 +802,129 @@ class UBSManagementSystem:
     def close_window(self):
         root.destroy()
 
-    
+
+class InsertTeacher(tk.Toplevel):
+    def __init__(self, insert_callback):
+        super().__init__()
+        self.title("Insert Data")
+
+        self.age_label = ttk.Label(self, text="Age:")
+        self.mail_label = ttk.Label(self, text="Mail:")
+        self.tel_no_label = ttk.Label(self, text="Tel no:")
+        self.address_label = ttk.Label(self, text="Address:")
+        self.name_label = ttk.Label(self, text="Name:")
+        self.surname_label = ttk.Label(self, text="Surname:")
+        self.salary_label = ttk.Label(self, text="Salary:")
+        self.course_id_label = ttk.Label(self, text="Course_id:")
+
+        self.age_entry = ttk.Entry(self)
+        self.mail_entry = ttk.Entry(self)
+        self.tel_no_entry = ttk.Entry(self)
+        self.address_entry = ttk.Entry(self)
+        self.name_entry = ttk.Entry(self)
+        self.surname_entry = ttk.Entry(self)
+        self.salary_entry = ttk.Entry(self)
+        self.course_id_entry = ttk.Entry(self)
+
+        self.insert_button = ttk.Button(self, text="Insert", command=self.insert_teacher)
+
+        self.age_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.mail_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        self.tel_no_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        self.address_label.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+        self.name_label.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+        self.surname_label.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+        self.salary_label.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+        self.course_id_label.grid(row=7, column=0, padx=10, pady=5, sticky="w")
+
+        self.age_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.mail_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        self.tel_no_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        self.address_entry.grid (row=3, column=1, padx=10, pady=5, sticky="w")
+        self.name_entry.grid (row=4, column=1, padx=10, pady=5, sticky="w")
+        self.surname_entry.grid (row=5, column=1, padx=10, pady=5, sticky="w")
+        self.salary_entry.grid(row=6, column=1, padx=10, pady=5, sticky="w")
+        self.course_id_entry.grid(row=7, column=1, padx=10, pady=5, sticky="w")
+
+        self.insert_button.grid(row=8, column=0, columnspan=2, pady=10)
+
+        self.insert_callback = insert_callback
+
+
+
+    def insert_teacher(self):
+        age = self.age_entry.get()
+        mail = self.mail_entry.get()
+        tel_no = self.tel_no_entry.get()
+        address = self.address_entry.get()
+        name = self.name_entry.get()
+        surname = self.surname_entry.get()
+        salary = self.salary_entry.get()
+        course_id = self.course_id_entry.get()
+        # Call the insert function with the obtained values
+        self.insert_callback(age,mail,tel_no,address, name, surname,salary,course_id)
+        self.destroy()
+
+
+class InsertDialog(tk.Toplevel):
+    def __init__(self, insert_callback):
+        super().__init__()
+
+        self.title("Insert Data")
+
+        self.department_label = ttk.Label(self, text= "Department:")
+        self.age_label = ttk.Label(self, text="Age:")
+        self.mail_label = ttk.Label(self, text="Mail:")
+        self.tel_no_label = ttk.Label(self, text="Tel no:")
+        self.address_label = ttk.Label(self, text="Address:")
+        self.name_label = ttk.Label(self, text="Name:")
+        self.surname_label = ttk.Label(self, text="Surname:")
+
+
+        self.department_entry = ttk.Entry(self)
+        self.age_entry = ttk.Entry(self)
+        self.mail_entry = ttk.Entry(self)
+        self.tel_no_entry = ttk.Entry(self)
+        self.address_entry = ttk.Entry(self)
+        self.name_entry = ttk.Entry(self)
+        self.surname_entry = ttk.Entry(self)
+
+        self.insert_button = ttk.Button(self, text="Insert", command=self.insert_active_student)
+
+        self.department_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.age_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        self.mail_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        self.tel_no_label.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+        self.address_label.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+        self.name_label.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+        self.surname_label.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+
+        self.department_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.age_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        self.mail_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        self.tel_no_entry.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+        self.address_entry.grid(row=4, column=1, padx=10, pady=5, sticky="w")
+        self.name_entry.grid(row=5, column=1, padx=10, pady=5, sticky="w")
+        self.surname_entry.grid(row=6, column=1, padx=10, pady=5, sticky="w")
+
+        self.insert_button.grid(row=7, column=0, columnspan=2, pady=10)
+
+        self.insert_callback = insert_callback
+
+
+
+    def insert_active_student(self):
+        department = self.department_entry.get()
+        age = self.age_entry.get()
+        mail = self.mail_entry.get()
+        tel_no = self.tel_no_entry.get()
+        address = self.address_entry.get()
+        name = self.name_entry.get()
+        surname = self.surname_entry.get()
+
+        # Call the insert function with the obtained values
+        self.insert_callback(department,age,mail,tel_no,address, name, surname)
+        self.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()

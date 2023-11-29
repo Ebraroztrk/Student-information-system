@@ -669,7 +669,7 @@ try:
         #get_section_request(113)
         #activate_the_courses()
         #insert_material(3000,3)
-        get_material(24)
+        #get_material(24)
         connection.commit()
 
 except mysql.connector.Error as e:
