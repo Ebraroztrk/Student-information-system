@@ -401,11 +401,9 @@ def print_program(course_array):
         time_slot_index = day_section % 10
         schedule[day_index][time_slot_index] = str(course_id)
 
-    schedule_string = "\t" + "\t".join(time_slot for time_slot in time_slots) + "\n"
+    print("\t" + "\t".join(time_slot for time_slot in time_slots))
     for i, day in enumerate(days):
-        schedule_string += f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]) + "\n"
-
-    return schedule_string
+        print(f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]))
 
 
 
@@ -471,6 +469,17 @@ def get_course_count():
     course_count_int = int(count_value)
     return course_count_int
 
+def create_random_sections():
+    num_of_random_numbers = random.randint(40, 45)
+    random_numbers = []
+
+    for i in range(num_of_random_numbers):
+        first_digit = random.randint(0, 4)
+        second_digit = random.randint(0, 4)
+        if (first_digit * 10 + second_digit) not in random_numbers:
+            random_numbers.append(first_digit * 10 + second_digit) 
+    return random_numbers
+
 #day_section [pzt,3] gibi girdileri sayiya cevirmek icin 
 def convert_section_to_number(day_section):
     day, section = day_section
@@ -510,6 +519,14 @@ def insert_active_student(department,age,mail,tel_no,address,name,surname):
         VALUES (%s)
     ''', (student_id,))
 
+    #ogrenci olusturulunca rastgele musait saatler ekleniyor
+    selected_numbers = create_random_sections()
+    for day_section in selected_numbers:
+        cursor.execute('''
+            INSERT INTO Student_Section_Availability (student_id, available_section)
+            VALUES (%s, %s)
+        ''', (student_id, day_section))
+
 
 def insert_admin(age,mail,tel_no,address,name,surname,salary):
     employee_id = get_person_count()+1
@@ -530,6 +547,15 @@ def insert_teacher(age,mail,tel_no,address,name,surname,salary,course_id):
         INSERT INTO Teacher (teacher_id,course_id)
         VALUES (%s,%s)
     ''', (teacher_id,course_id))
+    
+    #teacher olusturunca rastgele saatlere musaitlik koyuyorum
+    selected_numbers = create_random_sections()
+    for day_section in selected_numbers:
+        cursor.execute('''
+            INSERT INTO Teacher_Section_Availability (teacher_id, course_id, available_section)
+            VALUES (%s, %s, %s)
+        ''', (teacher_id, course_id, day_section))
+
 
 #------------------------------------------------------------------------------------------------------------------------
 try:
@@ -552,7 +578,10 @@ try:
         #get_teacher_available_hours(521)
         #insert_admin(21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk",20000)
         #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
-        get_active_student(559)
+        #insert_active_student("department3",21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk")
+        #insert_teacher(21,"ebrar@edu.tr","05432893715","somesokak","yigit","ozturkk",30000,114)
+        get_all_teachers()
+        get_teacher_available_hours(570)
         connection.commit()
 
 except mysql.connector.Error as e:
