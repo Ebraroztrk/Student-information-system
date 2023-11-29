@@ -14,8 +14,15 @@ person_id = 551 #yeni insanlar eklendikce 551den sonra id alicak
 days = ["Pzt", "Sali", "Cars", "Prs", "Cuma"]
 time_slots = ["08:30-10:30", "10:30-12:30", "12:30-14:30", "14:30-16:30", "16:30-18:30"]
 
+connection = mysql.connector.connect(
+    host=host,
+    user=user,
+    password=password,
+    database=database
+)
+cursor = connection.cursor()
 
-def get_all_students(cursor):
+def get_all_students():
     cursor.execute('''
         select *
         from student s
@@ -24,7 +31,7 @@ def get_all_students(cursor):
     values = cursor.fetchall()
     print(values)
 
-def get_active_students(cursor):
+def get_active_students():
     cursor.execute('''
         select p.*
         from active_student s
@@ -33,7 +40,7 @@ def get_active_students(cursor):
     values = cursor.fetchall()
     print(values)
 
-def get_graduated_students(cursor):
+def get_graduated_students():
     cursor.execute('''
         select s.graduate_date, s.grade, p.*
         from graduated_student s
@@ -42,7 +49,7 @@ def get_graduated_students(cursor):
     values = cursor.fetchall()
     print(values)
 
-def get_all_parents(cursor):
+def get_all_parents():
     cursor.execute('''
         select p.*
         from active_student s
@@ -51,7 +58,7 @@ def get_all_parents(cursor):
     values = cursor.fetchall()
     print(values)
 
-def get_all_employees(cursor):
+def get_all_employees():
     cursor.execute('''
         select e.*
         from employee e
@@ -60,7 +67,7 @@ def get_all_employees(cursor):
     print(values)
 
 
-def get_all_teachers(cursor):
+def get_all_teachers():
     cursor.execute('''
         select e.*,t.course_id
         from employee e
@@ -69,7 +76,7 @@ def get_all_teachers(cursor):
     values = cursor.fetchall()
     print(values)
 
-def get_all_administrative_staff(cursor):
+def get_all_administrative_staff():
     cursor.execute('''
         SELECT p.* 
         FROM Administrative_staff a
@@ -80,7 +87,7 @@ def get_all_administrative_staff(cursor):
     print (values)
     return values
 
-def get_all_cleaners(cursor):
+def get_all_cleaners():
     cursor.execute('''
         SELECT p.* 
         FROM temizlikci t
@@ -91,7 +98,7 @@ def get_all_cleaners(cursor):
     print (values)
     return values
 
-def get_admin(cursor,personel_id):
+def get_admin(personel_id):
     cursor.execute('''
         SELECT p.* 
         FROM Administrative_staff a
@@ -103,7 +110,7 @@ def get_admin(cursor,personel_id):
     print (value)
     return value
 
-def get_teacher(cursor,teacher_id):
+def get_teacher(teacher_id):
     cursor.execute('''
         SELECT p.*,t.course_id as course_id
         FROM teacher t
@@ -115,7 +122,7 @@ def get_teacher(cursor,teacher_id):
     print (value)
     return value
 
-def get_cleaner(cursor,cleaner_id):
+def get_cleaner(cleaner_id):
     cursor.execute('''
         SELECT p.*
         FROM temizlikci t
@@ -127,7 +134,7 @@ def get_cleaner(cursor,cleaner_id):
     print (value)
     return value
 
-def get_active_student(cursor,student_id):
+def get_active_student(student_id):
     cursor.execute('''
         SELECT p.*
         FROM Active_student s
@@ -137,7 +144,7 @@ def get_active_student(cursor,student_id):
     value = cursor.fetchone()
     print (value)
     return value
-def get_graduated_student(cursor,student_id):
+def get_graduated_student(student_id):
     cursor.execute('''
         SELECT p.*,s.graduate_date,s.grade
         FROM graduated_student s
@@ -148,7 +155,7 @@ def get_graduated_student(cursor,student_id):
     print (value)
     return value
 
-def get_parent (cursor,student_id):
+def get_parent (student_id):
     cursor.execute('''
         SELECT p.*
         FROM student s
@@ -159,7 +166,7 @@ def get_parent (cursor,student_id):
     print (value)
     return value
 
-def get_teacher_available_hours(cursor,teacher_id):
+def get_teacher_available_hours(teacher_id):
     cursor.execute('''
         SELECT t.*
         FROM teacher_section_availability t
@@ -173,7 +180,7 @@ def get_teacher_available_hours(cursor,teacher_id):
     print_program(schedule)
     return values
 
-def get_all_section_requests(cursor):
+def get_all_section_requests():
     cursor.execute('''
             SELECT sr.course_id,sr.day_section
             FROM section_request sr
@@ -182,7 +189,7 @@ def get_all_section_requests(cursor):
     print (values)
     return values
 
-def get_section_request(cursor, course_id):
+def get_section_request(course_id):
     cursor.execute('''
         SELECT c.course_id, c.day_section, c.request_count
         FROM course c
@@ -196,7 +203,7 @@ def get_section_request(cursor, course_id):
     print_program(schedule)
     return values
 
-def get_student_requests(cursor):
+def get_student_requests():
     cursor.execute('''
             SELECT sr.*
             FROM student_request sr
@@ -205,7 +212,7 @@ def get_student_requests(cursor):
     print (values)
     return values
 
-def get_student_request(cursor,student_id):
+def get_student_request(student_id):
     cursor.execute('''
         SELECT sr.*
         FROM student_request sr
@@ -214,7 +221,7 @@ def get_student_request(cursor,student_id):
     values = cursor.fetchall()
     print(values)
     return values
-def get_student_available_sections(cursor,student_id):
+def get_student_available_sections(student_id):
     cursor.execute('''
         SELECT sc.*
         FROM student_section_availability sc
@@ -228,7 +235,7 @@ def get_student_available_sections(cursor,student_id):
     print_program(schedule)
     return values
 
-def get_student_program(cursor,student_id):
+def get_student_program(student_id):
     cursor.execute('''
         SELECT sp.*
         FROM student_program sp
@@ -242,7 +249,7 @@ def get_student_program(cursor,student_id):
     print_program(schedule)
     return values
 
-def get_teacher_program(cursor,teacher_id):
+def get_teacher_program(teacher_id):
     cursor.execute('''
         SELECT sp.*
         FROM teacher_program sp
@@ -270,21 +277,14 @@ def print_program(course_array):
 
 
 try:
-    connection = mysql.connector.connect(
-        host=host,
-        user=user,
-        password=password,
-        database=database
-    )
     if connection.is_connected():
-        cursor = connection.cursor()
-        get_section_request(cursor,101)
-        get_teacher_program(cursor,521)
-    connection.commit()
+        get_teacher_available_hours(521)
+        connection.commit()
+
 except mysql.connector.Error as e:
     print(f"Error: {e}")
 
 finally:
-    if 'connection' in locals() and connection.is_connected():
+    if connection.is_connected():
         connection.close()
         print("Connection closed")
