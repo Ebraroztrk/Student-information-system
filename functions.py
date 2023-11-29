@@ -9,9 +9,7 @@ user = "root"
 password = "327275"
 database = "ubs"
 
-person_id = 551 #yeni insanlar eklendikce 551den sonra id alicak
-
-days = ["Pzt", "Sali", "Cars", "Prs", "Cuma"]
+days = ["Pzt", "Sali", "Crs", "Prs", "Cuma"]
 time_slots = ["08:30-10:30", "10:30-12:30", "12:30-14:30", "14:30-16:30", "16:30-18:30"]
 
 connection = mysql.connector.connect(
@@ -97,6 +95,18 @@ def get_all_cleaners():
     values = cursor.fetchall()
     print (values)
     return values
+
+def get_employee(employee_id):
+    cursor.execute('''
+        select e.salary,p.*
+        from employee e
+        join person p on p.person_id = e.employee_id
+    ''')
+    values = cursor.fetchall()
+    print (values)
+    return values
+
+
 
 def get_admin(personel_id):
     cursor.execute('''
@@ -263,7 +273,85 @@ def get_teacher_program(teacher_id):
     print_program(schedule)
     return values
 
+def get_weekly_reports():
+    cursor.execute('''
+        SELECT wp.*
+        FROM report_weekly wp
+    ''')
+    values = cursor.fetchall()
+    print(values)
+    return values
 
+def get_weekly_report(report_id):
+    cursor.execute('''
+        SELECT r.*
+        FROM report_weekly r
+        WHERE r.report_id = %s
+    ''', (report_id,))
+    values = cursor.fetchall()
+    print(values)
+    return values
+
+def get_monthly_reports():
+    cursor.execute('''
+        SELECT mp.*
+        FROM report_monthly mp
+    ''')
+    values = cursor.fetchall()
+    print(values)
+    return values    
+
+def get_monthly_report(report_id):
+    cursor.execute('''
+        SELECT r.*
+        FROM report_monthly r
+        WHERE r.report_id = %s
+    ''', (report_id,))
+    values = cursor.fetchall()
+    print(values)
+    return values
+
+def get_course_uses_material():
+    cursor.execute('''
+        SELECT cm.*,m.value,m.stock_amount
+        FROM course_uses_material cm, material m
+        where cm.material_id = m.material_id
+    ''')
+    values = cursor.fetchall()
+    print(values)
+    return values  
+
+def get_course_uses(course_id):
+    cursor.execute('''
+        SELECT cm.*
+        FROM course_uses_material cm
+        WHERE cm.course_id = %s
+    ''', (course_id,))
+    values = cursor.fetchall()
+    print(values)
+    return values
+
+def get_materials():
+    cursor.execute('''
+        SELECT m.*
+        FROM material m
+    ''')
+    values = cursor.fetchall()
+    print(values)
+    return values
+
+def get_material(material_id):
+    cursor.execute('''
+        SELECT m.*
+        FROM material m
+        WHERE m.material_id = %s
+    ''', (material_id,))
+    values = cursor.fetchall()
+    print(values)
+    return values   
+
+
+# Filter for person
 def get_dynamic_person(*columns):
     view_name = f'dynamic_person_view_{"_".join(columns)}'
     
@@ -304,11 +392,84 @@ def print_program(course_array):
         print(f"{day}\t\t" + "\t\t".join(cell if cell != '' else '-' for cell in schedule[i]))
 
 
+
+
+# -------------------------------------------------------------------------------------------------------------------
+#yeni eklenen kisinin isdini almak icin
+def get_person_count():
+    cursor.execute('''
+        SELECT person_id FROM person ORDER BY person_id DESC LIMIT 1;
+    ''')
+    person_count_tuple = cursor.fetchone()
+    count_value = person_count_tuple[0]
+    person_count_int = int(count_value)
+    return person_count_int
+
+# yeni eklenen material'e id atamak icin
+def get_material_count():
+    cursor.execute('''
+        SELECT material_id FROM material ORDER BY material_id DESC LIMIT 1;
+    ''')
+    material_count_tuple = cursor.fetchone()
+    count_value = material_count_tuple[0]
+    material_count_int = int(count_value)
+    return material_count_int
+
+#Yeni eklenen hatalikrapora id atamak icinn
+def get_report_weekly_count():
+    cursor.execute('''
+        SELECT report_id FROM report_weekly ORDER BY report_id DESC LIMIT 1;
+    ''')
+    report_count_tuple = cursor.fetchone()
+    count_value = report_count_tuple[0]
+    report_count_int = int(count_value)
+    return report_count_int
+
+#Yeni eklenen aylikrapora id atamak icinn
+def get_report_monthly_count():
+    cursor.execute('''
+        SELECT report_id FROM report_monthly ORDER BY report_id DESC LIMIT 1;
+    ''')
+    report_count_tuple = cursor.fetchone()
+    count_value = report_count_tuple[0]
+    report_count_int = int(count_value)
+    return report_count_int
+
+# bir section icin request oldugunda id atamak icin
+def get_request_count():
+    cursor.execute('''
+        SELECT request_id FROM section_request ORDER BY request_id DESC LIMIT 1;
+    ''')
+    request_count_tuple = cursor.fetchone()
+    count_value = request_count_tuple[0]
+    request_count_int = int(count_value)
+    return request_count_int
+
+#day_section [pzt,3] gibi girdileri sayiya cevirmek icin 
+def convert_section_to_number(day_section):
+    day, section = day_section
+    first_digit = days.index(day) 
+    second_digit = time_slots.index(section) 
+    
+    return first_digit * 10 + second_digit
+#------------------------------------------------------------------------------------------------------------------------
+
 try:
     if connection.is_connected():
-        user_input = "age,name,surname,address,mail,tel_no"
-        columns_to_display = [col.strip() for col in user_input.split(',')]
-        get_dynamic_person(*columns_to_display)
+        
+        #user_input = "age,name,surname,address,mail,tel_no"
+        #columns_to_display = [col.strip() for col in user_input.split(',')]
+        #get_dynamic_person(*columns_to_display)
+        #get_weekly_reports()
+        #get_monthly_reports()
+        #get_course_uses_material()
+        #get_course_uses(101)
+        #get_materials()
+        #get_material(10)
+        #get_monthly_report(1)
+        #get_weekly_report(1)
+        input = 'Crs', '12:30-14:30'
+        print(convert_section_to_number(input))
         connection.commit()
 
 except mysql.connector.Error as e:
