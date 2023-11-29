@@ -8,7 +8,7 @@ from tkinter import messagebox
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '327275',
+    'password': '12345678',
     'database': 'ubs',
 }
 
@@ -221,6 +221,14 @@ class UBSManagementSystem:
         self.families_menu.add_command(label="Tüm Aileler", command=self.show_all_parents)
         self.btn_families.config(menu=self.families_menu)
 
+        self.btn_others = tk.Menubutton(self.toolbar, text="Diğer İşlemler", bg=button_color, fg=text_color, borderwidth=2, relief="solid")
+        self.btn_others.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.others_menu = tk.Menu(self.btn_others, tearoff=0)
+        self.others_menu.add_command(label="Haftalık Rapor", command=self.show_weekly_reports)
+        self.others_menu.add_command(label="Aylık Rapor", command=self.show_monthly_reports)
+        self.btn_others.config(menu=self.others_menu)
+
         # Notebook oluşturun
         self.notebook = ttk.Notebook(self.root)
         self.style = ttk.Style()
@@ -250,6 +258,18 @@ class UBSManagementSystem:
         connection.commit()
         connection.close()
         root.destroy()
+
+    def show_weekly_reports(self):
+        expenses_data = self.get_weekly_reports(cursor)  # Use self to access the method
+        report_id, material_expense, cleaning_expense, other_expenses = expenses_data
+        message = f"Rapor ID: {report_id}\nEşya {material_expense}\nTemizlik Gideleri: {cleaning_expense}\nDiğer Giderler: {other_expenses}"
+        messagebox.showinfo("Haftalık Giderler", message)
+    
+    def show_monthly_reports(self):
+        expenses = self.get_monthly_reports(cursor)  # Use self to access the method
+        report_id, rent, total_salary = expenses
+        message = f"Rapor ID: {report_id}\nKira:{rent}\nToplam Maaş Giderleri: {total_salary}"
+        messagebox.showinfo("Aylık Giderler", message)
 
     def show_all_admins(self):
         window = tk.Toplevel(self.root)
@@ -854,6 +874,22 @@ class UBSManagementSystem:
             student_id, day_section, course_id = value
             schedule.append((course_id, day_section))
         return self.print_program(schedule)
+    
+    def get_weekly_reports(self,cursor):
+        cursor.execute('''
+            SELECT wp.*
+            FROM report_weekly wp
+        ''')
+        values = cursor.fetchall()
+        return values
+    
+    def get_monthly_reports(self,cursor):
+        cursor.execute('''
+            SELECT mp.*
+            FROM report_monthly mp
+        ''')
+        values = cursor.fetchall()
+        return values  
 
     def print_program(self,course_array):
         schedule = [["" for _ in range(len(time_slots))] for _ in range(len(days))]
