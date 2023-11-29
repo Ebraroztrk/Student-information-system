@@ -56,6 +56,15 @@ class UBSManagementSystem:
         self.students_menu.add_command(label="Mezun Öğrenciler", command=self.show_graduated_students)
         self.btn_students.config(menu=self.students_menu)
 
+        self.submenu_students = tk.Menu(self.students_menu, tearoff=0)
+        self.submenu_students.add_command(label="Öğrenci Ekle", command=self.insert_student)
+        
+        # "Öğrenciler" menüsüne alt menüyü ekle
+        self.students_menu.add_cascade(label="Öğrenci İşlemleri", menu=self.submenu_students)
+        
+        self.btn_students.config(menu=self.students_menu)
+
+
         # "Öğretmenler" butonu
         self.btn_teachers = tk.Menubutton(self.toolbar, text="Öğretmenler", bg=button_color, fg=text_color, borderwidth=2, relief="solid")
         self.btn_teachers.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -78,8 +87,7 @@ class UBSManagementSystem:
 
         self.employees_menu.add_command(label="Öğretmenler", command=self.show_all_teachers)
         self.employees_menu.add_command(label="Yöneticiler", command=self.show_all_admins)
-        ##admins'i ekle
-        #self.employees_menu.add_command(label="İdareciler", command=self.show_administrators)
+        
         ##all employees'i ekle
         #self.employees_menu.add_command(label="Tüm Çalışanlar", command=self.em)
         self.btn_employees.config(menu=self.employees_menu)
@@ -106,9 +114,109 @@ class UBSManagementSystem:
 
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
+        input_frame = ttk.Frame(root, padding=(10, 10, 10, 10))
+        input_frame.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        
+
+
+
+
         ###################################################################################
         ##FUNCTIONS
 
+    def insert_student(self):
+        # Yeni pencere oluştur
+        insert_window = tk.Toplevel(root)
+        insert_window.title("Öğrenci Ekle")
+
+        # Giriş alanları için bir çerçeve oluştur
+        input_frame = ttk.Frame(insert_window, padding="10")
+        input_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Giriş alanları oluştur
+        ttk.Label(input_frame, text="Bölüm:").grid(column=0, row=0, sticky=tk.W)
+        department_entry = ttk.Entry(input_frame)
+        department_entry.grid(column=1, row=0, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Yaş:").grid(column=0, row=1, sticky=tk.W)
+        age_entry = ttk.Entry(input_frame)
+        age_entry.grid(column=1, row=1, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Mail:").grid(column=0, row=2, sticky=tk.W)
+        mail_entry = ttk.Entry(input_frame)
+        mail_entry.grid(column=1, row=2, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Telefon No:").grid(column=0, row=3, sticky=tk.W)
+        tel_no_entry = ttk.Entry(input_frame)
+        tel_no_entry.grid(column=1, row=3, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Adres:").grid(column=0, row=4, sticky=tk.W)
+        address_entry = ttk.Entry(input_frame)
+        address_entry.grid(column=1, row=4, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Ad:").grid(column=0, row=5, sticky=tk.W)
+        name_entry = ttk.Entry(input_frame)
+        name_entry.grid(column=1, row=5, sticky=tk.W)
+
+        ttk.Label(input_frame, text="Soyad:").grid(column=0, row=6, sticky=tk.W)
+        surname_entry = ttk.Entry(input_frame)
+        surname_entry.grid(column=1, row=6, sticky=tk.W)
+
+        # "Öğrenci Ekle" butonu
+        insert_button = tk.Button(insert_window, text="Öğrenci Ekle", command=lambda: self.add_active_student(
+            department_entry.get(), age_entry.get(), mail_entry.get(),
+            tel_no_entry.get(), address_entry.get(), name_entry.get(), surname_entry.get()
+        ))
+        insert_button.grid(column=0, row=1, sticky=tk.W)
+
+
+    def add_active_student(self):
+        # Kullanıcının girdiği değerleri al
+        department = self.department_entry.get()
+        age = self.age_entry.get()
+        mail = self.mail_entry.get()
+        tel_no = self.tel_no_entry.get()
+        address = self.address_entry.get()
+        name = self.name_entry.get()
+        surname = self.surname_entry.get()
+
+        # student_id'yi al
+
+        # Veritabanına ekleme işlemlerini gerçekleştir
+        self.insert_active_student()
+            
+
+
+    def get_request_count(self):
+        cursor.execute('''
+            SELECT request_id FROM section_request ORDER BY request_id DESC LIMIT 1;
+        ''')
+        request_count_tuple = cursor.fetchone()
+        count_value = request_count_tuple[0]
+        request_count_int = int(count_value)
+        return request_count_int
+
+    def insert_active_student(self,department,age,mail,tel_no,address,name,surname):
+        student_id = self.get_person_count()+1
+        self.insert_person(self,student_id,age,mail,tel_no,address,name,surname)
+        cursor.execute('''
+            INSERT INTO Student(student_id, department)
+            VALUES (%s, %s)
+        ''', (student_id, department))
+
+    def insert_person(self,person_id,age,mail,tel_no,address,name,surname):
+        cursor.execute('''
+            INSERT INTO Person (person_id, age, mail, tel_no, address, name, surname)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (person_id, age, mail, tel_no, address, name, surname))
+
+#admin falan eklendiginde otomatik person da olussun diye yazdim
+    def insert_employee(employee_id,salary):
+        cursor.execute('''
+            INSERT INTO Employee (employee_id, salary)
+            VALUES (%s, %s)
+        ''', (employee_id, salary))    
 
     def show_all_admins(self):
         window = tk.Toplevel(self.root)
