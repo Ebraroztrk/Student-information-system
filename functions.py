@@ -618,6 +618,13 @@ def activate_the_courses():
         );
     ''')
 
+def create_teacher_program(teacher_id):
+    cursor.execute('''
+        INSERT INTO teacher_program (teacher_id, day_section, course_id)
+        SELECT c.teacher_id, c.day_section, c.course_id
+        FROM Course c
+        WHERE c.active = true and c.teacher_id = %s;
+    ''',(teacher_id,))
 #------------------------------------------------------------------------------------------------------------------------
 try:
     if connection.is_connected():
@@ -647,6 +654,7 @@ try:
         #create_student_program(560)
         #get_student_program(560)
         #get_all_teachers()
+        #create_teacher_program(570)
         #get_teacher_program(570)
         #insert_section_request(113, "Sali","08:30-10:30")
         #get_section_request(113)
